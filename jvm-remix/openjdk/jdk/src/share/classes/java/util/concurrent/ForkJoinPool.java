@@ -1012,7 +1012,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if ((o = U.getObject(a, j)) instanceof CountedCompleter) {
                     for (t = (CountedCompleter<?>)o, r = t;;) {
                         if (r == root) {
-                            if (U.compareAndSwapInt(this, QLOCK, 0, 1)) {
+                            if (U.compareAndSwapInt(this, WorkQueue.QLOCK, 0, 1)) {
                                 if (top == s && array == a &&
                                     U.compareAndSwapObject(a, j, t, null)) {
                                     top = s - 1;
@@ -1070,8 +1070,10 @@ public class ForkJoinPool extends AbstractExecutorService {
 
         // Unsafe mechanics
         private static final sun.misc.Unsafe U;
-        private static final long QBASE;
-        private static final long QLOCK;
+//        private static final long QBASE;
+//        private static final long QLOCK;
+        private static volatile long QBASE;
+        private static volatile long QLOCK;
         private static final int ABASE;
         private static final int ASHIFT;
         static {
@@ -1079,10 +1081,19 @@ public class ForkJoinPool extends AbstractExecutorService {
                 U = sun.misc.Unsafe.getUnsafe();
                 Class<?> k = WorkQueue.class;
                 Class<?> ak = ForkJoinTask[].class;
-                QBASE = U.objectFieldOffset
-                    (k.getDeclaredField("base"));
-                QLOCK = U.objectFieldOffset
-                    (k.getDeclaredField("qlock"));
+//                QBASE = U.objectFieldOffset
+//                    (k.getDeclaredField("base"));
+//                QLOCK = U.objectFieldOffset
+//                    (k.getDeclaredField("qlock"));
+            QBASE = 0;
+            QLOCK = 0;
+            U.registerStaticFieldOffset(
+                k.getDeclaredField("QBASE"),
+                k.getDeclaredField("base"));
+            U.registerStaticFieldOffset(
+                k.getDeclaredField("QLOCK"),
+                k.getDeclaredField("qlock"));
+
                 ABASE = U.arrayBaseOffset(ak);
                 int scale = U.arrayIndexScale(ak);
                 if ((scale & (scale - 1)) != 0)
@@ -1485,7 +1496,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         WorkQueue[] ws = workQueues;
         if (ps > 0 && ws != null && (m = (ws.length - 1)) >= 0 &&
             (q = ws[m & r & SQMASK]) != null && r != 0 &&
-            U.compareAndSwapInt(q, QLOCK, 0, 1)) { // lock
+            U.compareAndSwapInt(q, WorkQueue.QLOCK, 0, 1)) { // lock
             if ((a = q.array) != null &&
                 (am = a.length - 1) > (n = (s = q.top) - q.base)) {
                 int j = ((am & s) << ASHIFT) + ABASE;
@@ -1547,7 +1558,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     releasePlock(nps);
             }
             else if ((q = ws[k = r & m & SQMASK]) != null) {
-                if (q.qlock == 0 && U.compareAndSwapInt(q, QLOCK, 0, 1)) {
+                if (q.qlock == 0 && U.compareAndSwapInt(q, WorkQueue.QLOCK, 0, 1)) {
                     ForkJoinTask<?>[] a = q.array;
                     int s = q.top;
                     boolean submitted = false;
@@ -1683,7 +1694,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                             helpRelease(c, ws, w, q, b);
                         else if (q.base == b &&
                                  U.compareAndSwapObject(a, i, t, null)) {
-                            U.putOrderedInt(q, QBASE, b + 1);
+                            U.putOrderedInt(q, WorkQueue.QBASE, b + 1);
                             if ((b + 1) - q.top < 0)
                                 signalWork(ws, q);
                             w.runTask(t);
@@ -1854,7 +1865,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 if (t == null)
                                     break restart;
                                 if (U.compareAndSwapObject(a, i, t, null)) {
-                                    U.putOrderedInt(v, QBASE, b + 1);
+                                    U.putOrderedInt(v, WorkQueue.QBASE, b + 1);
                                     ForkJoinTask<?> ps = joiner.currentSteal;
                                     int jt = joiner.top;
                                     do {
@@ -2326,7 +2337,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             (a = joiner.array) != null) {
             long j = (((a.length - 1) & (s - 1)) << ASHIFT) + ABASE;
             if (U.getObject(a, j) == task &&
-                U.compareAndSwapInt(joiner, QLOCK, 0, 1)) {
+                U.compareAndSwapInt(joiner, WorkQueue.QLOCK, 0, 1)) {
                 if (joiner.top == s && joiner.array == a &&
                     U.compareAndSwapObject(a, j, task, null)) {
                     joiner.top = s - 1;
@@ -3241,37 +3252,55 @@ public class ForkJoinPool extends AbstractExecutorService {
 
     // Unsafe mechanics
     private static final sun.misc.Unsafe U;
-    private static final long CTL;
-    private static final long PARKBLOCKER;
+    //private static final long CTL;
+    //private static final long PARKBLOCKER;
     private static final int ABASE;
     private static final int ASHIFT;
-    private static final long STEALCOUNT;
-    private static final long PLOCK;
-    private static final long INDEXSEED;
-    private static final long QBASE;
-    private static final long QLOCK;
+    //private static final long STEALCOUNT;
+    //private static final long PLOCK;
+    //private static final long INDEXSEED;
+    //private static final long QBASE;
+    //private static final long QLOCK;
+    private static volatile long CTL;
+    private static volatile long PARKBLOCKER;
+    private static volatile long STEALCOUNT;
+    private static volatile long PLOCK;
+    private static volatile long INDEXSEED;
 
     static {
         // initialize field offsets for CAS etc
         try {
             U = sun.misc.Unsafe.getUnsafe();
             Class<?> k = ForkJoinPool.class;
-            CTL = U.objectFieldOffset
+            CTL = STEALCOUNT = PLOCK = INDEXSEED = 0;
+            U.registerStaticFieldOffset(
+                k.getDeclaredField("CTL"),
+                k.getDeclaredField("ctl"));
+            U.registerStaticFieldOffset(
+                k.getDeclaredField("STEALCOUNT"),
+                k.getDeclaredField("stealCount"));
+            U.registerStaticFieldOffset(
+                k.getDeclaredField("PLOCK"),
+                k.getDeclaredField("plock"));
+            U.registerStaticFieldOffset(
+                k.getDeclaredField("INDEXSEED"),
+                k.getDeclaredField("indexSeed"));
+/*            CTL = U.objectFieldOffset
                 (k.getDeclaredField("ctl"));
             STEALCOUNT = U.objectFieldOffset
                 (k.getDeclaredField("stealCount"));
             PLOCK = U.objectFieldOffset
                 (k.getDeclaredField("plock"));
             INDEXSEED = U.objectFieldOffset
-                (k.getDeclaredField("indexSeed"));
+                (k.getDeclaredField("indexSeed"));*/
             Class<?> tk = Thread.class;
             PARKBLOCKER = U.objectFieldOffset
                 (tk.getDeclaredField("parkBlocker"));
-            Class<?> wk = WorkQueue.class;
-            QBASE = U.objectFieldOffset
-                (wk.getDeclaredField("base"));
-            QLOCK = U.objectFieldOffset
-                (wk.getDeclaredField("qlock"));
+//            Class<?> wk = WorkQueue.class;
+//            QBASE = U.objectFieldOffset
+//                (wk.getDeclaredField("base"));
+//            QLOCK = U.objectFieldOffset
+//                (wk.getDeclaredField("qlock"));
             Class<?> ak = ForkJoinTask[].class;
             ABASE = U.arrayBaseOffset(ak);
             int scale = U.arrayIndexScale(ak);

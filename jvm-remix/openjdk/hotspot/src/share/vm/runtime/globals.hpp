@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #ifndef SHARE_VM_RUNTIME_GLOBALS_HPP
 #define SHARE_VM_RUNTIME_GLOBALS_HPP
 
@@ -193,6 +197,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 // string type aliases used only in this file
 typedef const char* ccstr;
 typedef const char* ccstrlist;   // represents string arguments which accumulate
+
+//REMIX
+typedef enum REMIXLevels { REMIX_NONE = 0, REMIX_DETECT = 1, REMIX_REPAIR_OFFLINE = 2, REMIX_REPAIR_ONLINE = 3 } REMIXLevels;
 
 struct Flag {
   enum Flags {
@@ -1357,6 +1364,19 @@ class CommandLineFlags {
                                                                             \
   product(bool, TraceMonitorInflation, false,                               \
           "Trace monitor inflation in JVM")                                 \
+                                                                            \
+                                                                            \
+  /* false sharing REMIX */                                                 \
+  product(uintx, REMIXLevel, REMIX_NONE,                                    \
+          "REMIX level: 0 - none, 1 - detect, 2 - offline repair, "         \
+          "3 - online repair")                                              \
+                                                                            \
+  product(uintx, REMIXSamplingRatio, 10000, "REMIX Sampling Ratio")         \
+  product(bool, REMIXVerbose, false, "REMIX Verbose")                       \
+  product(bool, REMIXDebug, false, "REMIX Debug")                           \
+  product(bool, REMIXMetaspace, false, "REMIX Metaspace")                   \
+  product(bool, REMIXHitVerbose, false, "REMIX Hits Verbose")               \
+  product(bool, REMIXTiming, false, "REMIX Timing")                         \
                                                                             \
   /* gc */                                                                  \
                                                                             \

@@ -1559,15 +1559,20 @@ class InetAddress implements java.io.Serializable {
         }
     }
 
-    private static final long FIELDS_OFFSET;
+    private static volatile long FIELDS_OFFSET;
     private static final sun.misc.Unsafe UNSAFE;
 
     static {
         try {
             sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
-            FIELDS_OFFSET = unsafe.objectFieldOffset(
-                InetAddress.class.getDeclaredField("holder")
-            );
+            Class k  = InetAddress.class;
+            unsafe.registerStaticFieldOffset(
+                k.getDeclaredField("FIELDS_OFFSET"),
+                k.getDeclaredField("holder"));
+
+//            FIELDS_OFFSET = unsafe.objectFieldOffset(
+//                InetAddress.class.getDeclaredField("holder")
+//            );
             UNSAFE = unsafe;
         } catch (ReflectiveOperationException e) {
             throw new Error(e);

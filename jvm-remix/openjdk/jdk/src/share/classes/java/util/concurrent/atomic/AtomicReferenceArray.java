@@ -55,14 +55,16 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
     private static final Unsafe unsafe;
     private static final int base;
     private static final int shift;
-    private static final long arrayFieldOffset;
+    private static volatile long arrayFieldOffset;
     private final Object[] array; // must have exact type Object[]
 
     static {
         try {
             unsafe = Unsafe.getUnsafe();
-            arrayFieldOffset = unsafe.objectFieldOffset
-                (AtomicReferenceArray.class.getDeclaredField("array"));
+            arrayFieldOffset = 0;
+            unsafe.registerStaticFieldOffset(
+                AtomicReferenceArray.class.getDeclaredField("arrayFieldOffset"),
+                AtomicReferenceArray.class.getDeclaredField("array"));
             base = unsafe.arrayBaseOffset(Object[].class);
             int scale = unsafe.arrayIndexScale(Object[].class);
             if ((scale & (scale - 1)) != 0)

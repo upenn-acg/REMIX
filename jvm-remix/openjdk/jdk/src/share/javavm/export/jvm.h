@@ -23,6 +23,10 @@
  * questions.
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #ifndef _JAVASOFT_JVM_H_
 #define _JAVASOFT_JVM_H_
 
@@ -120,6 +124,18 @@ JVM_OnExit(void (*func)(void));
 /*
  * java.lang.Runtime
  */
+
+// REMIX start
+JNIEXPORT void JNICALL
+JVM_remix_repair_false_sharing();
+JNIEXPORT void JNICALL
+JVM_remix_test_heap_scan_speed(jint count);
+JNIEXPORT void JNICALL
+JVM_remix_print_object(jobject obj);
+JNIEXPORT jint JNICALL
+JVM_remix_object_size(jobject obj);
+// REMIX end
+
 JNIEXPORT void JNICALL
 JVM_Exit(jint code);
 

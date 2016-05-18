@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 // no precompiled headers
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -5872,6 +5876,11 @@ void Parker::park(bool isAbsolute, jlong time) {
   Thread* thread = Thread::current();
   assert(thread->is_Java_thread(), "Must be JavaThread");
   JavaThread *jt = (JavaThread *)thread;
+
+  // REMIX START
+  if(REMIXLevel == REMIX_REPAIR_ONLINE)
+      jt->merge_fs_data();
+  // REMIX END
 
   // Optional optimization -- avoid state transitions if there's an interrupt pending.
   // Check interrupt before trying to wait

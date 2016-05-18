@@ -1985,7 +1985,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     tty->print("%4d ", compile_id);    // print compilation number
     tty->print("%s ", (is_osr ? "%" : " "));
     if (task->code() != NULL) {
-      tty->print("size: %d(%d) ", task->code()->total_size(), task->code()->insts_size());
+      tty->print("size: %d(%d) entry: %p/%p", task->code()->total_size(), task->code()->insts_size(), task->code()->entry_point(), task->code()->verified_entry_point());
     }
     tty->print_cr("time: %d inlined: %d bytes", (int)time.milliseconds(), task->num_inlined_bytecodes());
   }

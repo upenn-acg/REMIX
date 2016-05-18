@@ -41,7 +41,7 @@
 #endif
 
 // Mutexes used in the VM.
-
+extern Monitor* FalseSharingFinder_lock;         // REMIX - lock for the false sharing finder
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictonary
 extern Mutex*   PackageTable_lock;               // a lock on the class loader package table

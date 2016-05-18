@@ -1531,7 +1531,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
     // Unsafe mechanics
     private static final sun.misc.Unsafe U;
-    private static final long STATUS;
+    private static volatile long STATUS;
 
     static {
         exceptionTableLock = new ReentrantLock();
@@ -1540,8 +1540,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         try {
             U = sun.misc.Unsafe.getUnsafe();
             Class<?> k = ForkJoinTask.class;
-            STATUS = U.objectFieldOffset
-                (k.getDeclaredField("status"));
+//            STATUS = U.objectFieldOffset
+//                (k.getDeclaredField("status"));
+            U.registerStaticFieldOffset(
+                k.getDeclaredField("STATUS"),
+                k.getDeclaredField("status"));
+
         } catch (Exception e) {
             throw new Error(e);
         }

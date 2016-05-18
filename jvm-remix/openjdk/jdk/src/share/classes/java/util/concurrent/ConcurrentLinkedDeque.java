@@ -326,20 +326,30 @@ public class ConcurrentLinkedDeque<E>
         // Unsafe mechanics
 
         private static final sun.misc.Unsafe UNSAFE;
-        private static final long prevOffset;
-        private static final long itemOffset;
-        private static final long nextOffset;
+        private static volatile long prevOffset;
+        private static volatile long itemOffset;
+        private static volatile long nextOffset;
 
         static {
             try {
                 UNSAFE = sun.misc.Unsafe.getUnsafe();
                 Class<?> k = Node.class;
-                prevOffset = UNSAFE.objectFieldOffset
+                UNSAFE.registerStaticFieldOffset(
+                    k.getDeclaredField("prevOffset"),
+                    k.getDeclaredField("prev"));
+                UNSAFE.registerStaticFieldOffset(
+                    k.getDeclaredField("itemOffset"),
+                    k.getDeclaredField("item"));
+                UNSAFE.registerStaticFieldOffset(
+                    k.getDeclaredField("nextOffset"),
+                    k.getDeclaredField("next"));
+
+/*                prevOffset = UNSAFE.objectFieldOffset
                     (k.getDeclaredField("prev"));
                 itemOffset = UNSAFE.objectFieldOffset
                     (k.getDeclaredField("item"));
                 nextOffset = UNSAFE.objectFieldOffset
-                    (k.getDeclaredField("next"));
+                    (k.getDeclaredField("next"));*/
             } catch (Exception e) {
                 throw new Error(e);
             }
@@ -1565,8 +1575,8 @@ public class ConcurrentLinkedDeque<E>
     // Unsafe mechanics
 
     private static final sun.misc.Unsafe UNSAFE;
-    private static final long headOffset;
-    private static final long tailOffset;
+    private static volatile long headOffset;
+    private static volatile long tailOffset;
     static {
         PREV_TERMINATOR = new Node<Object>();
         PREV_TERMINATOR.next = PREV_TERMINATOR;
@@ -1575,10 +1585,17 @@ public class ConcurrentLinkedDeque<E>
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
             Class<?> k = ConcurrentLinkedDeque.class;
-            headOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("head"));
-            tailOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("tail"));
+            UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("headOffset"),
+                k.getDeclaredField("head"));
+            UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("tailOffset"),
+                k.getDeclaredField("tail"));
+
+//            headOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("head"));
+//            tailOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("tail"));
         } catch (Exception e) {
             throw new Error(e);
         }

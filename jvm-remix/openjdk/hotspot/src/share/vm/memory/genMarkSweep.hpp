@@ -34,7 +34,7 @@ class GenMarkSweep : public MarkSweep {
   static void invoke_at_safepoint(int level, ReferenceProcessor* rp,
                                   bool clear_all_softrefs);
 
- private:
+ public:
 
   // Mark live objects
   static void mark_sweep_phase1(int level, bool clear_all_softrefs);

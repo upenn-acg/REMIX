@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #ifndef SHARE_VM_OOPS_KLASS_HPP
 #define SHARE_VM_OOPS_KLASS_HPP
 
@@ -157,6 +161,9 @@ class Klass : public Metadata {
   // All klasses loaded by a class loader are chained through these links
   Klass*      _next_link;
 
+  void*       _rebuilder;
+  int         _fs_blank_count;
+
   // The VM's representation of the ClassLoader used to load this class.
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
@@ -183,6 +190,7 @@ class Klass : public Metadata {
 
  public:
   bool is_klass() const volatile { return true; }
+  virtual Klass* create_same_size_placeholder(TRAPS) { return NULL; } // REMIX
 
   // super
   Klass* super() const               { return _super; }
@@ -279,6 +287,14 @@ class Klass : public Metadata {
   void accumulate_modified_oops()        { if (has_modified_oops()) _accumulated_modified_oops = 1; }
   void clear_accumulated_modified_oops() { _accumulated_modified_oops = 0; }
   bool has_accumulated_modified_oops()   { return _accumulated_modified_oops == 1; }
+
+    // REMIX start
+    void set_rebuilder(void* rebuilder) { _rebuilder = rebuilder; }
+    void clear_rebuilder() { _rebuilder = NULL; }
+    void* rebuilder() { return _rebuilder; }
+    void inc_fs_blank_count() { _fs_blank_count += 1; }
+    int  get_fs_blank_count() const { return _fs_blank_count; }
+    // REMIX END
 
  protected:                                // internal accessors
   Klass* subklass_oop() const            { return _subklass; }

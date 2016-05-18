@@ -56,12 +56,14 @@ public class AtomicInteger extends Number implements java.io.Serializable {
 
     // setup to use Unsafe.compareAndSwapInt for updates
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static final long valueOffset;
+    public static volatile long valueOffset;
 
     static {
         try {
-            valueOffset = unsafe.objectFieldOffset
-                (AtomicInteger.class.getDeclaredField("value"));
+            valueOffset = 0;
+            unsafe.registerStaticFieldOffset(
+                AtomicInteger.class.getDeclaredField("valueOffset"),
+                AtomicInteger.class.getDeclaredField("value"));
         } catch (Exception ex) { throw new Error(ex); }
     }
 

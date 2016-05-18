@@ -536,17 +536,24 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         // UNSAFE mechanics
 
         private static final sun.misc.Unsafe UNSAFE;
-        private static final long valueOffset;
-        private static final long nextOffset;
+        private static volatile long valueOffset;
+        private static volatile long nextOffset;
 
         static {
             try {
                 UNSAFE = sun.misc.Unsafe.getUnsafe();
                 Class<?> k = Node.class;
-                valueOffset = UNSAFE.objectFieldOffset
-                    (k.getDeclaredField("value"));
-                nextOffset = UNSAFE.objectFieldOffset
-                    (k.getDeclaredField("next"));
+//                valueOffset = UNSAFE.objectFieldOffset
+//                    (k.getDeclaredField("value"));
+//                nextOffset = UNSAFE.objectFieldOffset
+//                    (k.getDeclaredField("next"));
+    UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("valueOffset"),
+                k.getDeclaredField("value"));
+    UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("nextOffset"),
+                k.getDeclaredField("next"));
+
             } catch (Exception e) {
                 throw new Error(e);
             }

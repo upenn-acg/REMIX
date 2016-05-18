@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #ifndef SHARE_VM_MEMORY_REFERENCEPROCESSOR_HPP
 #define SHARE_VM_MEMORY_REFERENCEPROCESSOR_HPP
 
@@ -251,11 +255,13 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
 
   // Soft ref clearing policies
   // . the default policy
+  static ReferencePolicy*   _never_clear_policy;
   static ReferencePolicy*   _default_soft_ref_policy;
   // . the "clear all" policy
   static ReferencePolicy*   _always_clear_soft_ref_policy;
   // . the current policy below is either one of the above
   ReferencePolicy*          _current_soft_ref_policy;
+  ReferencePolicy*          _current_weak_ref_policy;
 
   // The discovered ref lists themselves
 
@@ -288,6 +294,16 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
     _current_soft_ref_policy->setup();   // snapshot the policy threshold
     return _current_soft_ref_policy;
   }
+
+    // REMIX START
+    ReferencePolicy* get_soft_ref_policy() const { return _current_soft_ref_policy; }
+    void set_no_clear_ref_policies()
+    {
+        _current_soft_ref_policy = _never_clear_policy;
+        _current_weak_ref_policy = _never_clear_policy;
+    }
+    void restore_soft_ref_policy(ReferencePolicy* old) { _current_soft_ref_policy = old; _current_weak_ref_policy = NULL;}
+    // REMIX END 
 
   // Process references with a certain reachability level.
   size_t process_discovered_reflist(DiscoveredList               refs_lists[],

@@ -23,6 +23,10 @@
  * questions.
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 package sun.misc;
 
 import java.security.*;
@@ -668,6 +672,10 @@ public final class Unsafe {
      * @see #getInt(Object, long)
      */
     public native long objectFieldOffset(Field f);
+    
+    // REMIX start
+    public native long registerStaticFieldOffset(Field staticTarget, Field f);
+    // REMIX end
 
     /**
      * Report the location of a given static field, in conjunction with {@link

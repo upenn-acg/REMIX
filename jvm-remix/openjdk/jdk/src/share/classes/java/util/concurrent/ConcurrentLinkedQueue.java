@@ -204,17 +204,24 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
         // Unsafe mechanics
 
         private static final sun.misc.Unsafe UNSAFE;
-        private static final long itemOffset;
-        private static final long nextOffset;
+        private static volatile long itemOffset;
+        private static volatile long nextOffset;
 
         static {
             try {
                 UNSAFE = sun.misc.Unsafe.getUnsafe();
                 Class<?> k = Node.class;
-                itemOffset = UNSAFE.objectFieldOffset
-                    (k.getDeclaredField("item"));
-                nextOffset = UNSAFE.objectFieldOffset
-                    (k.getDeclaredField("next"));
+//                itemOffset = UNSAFE.objectFieldOffset
+//                    (k.getDeclaredField("item"));
+//                nextOffset = UNSAFE.objectFieldOffset
+//                    (k.getDeclaredField("next"));
+                UNSAFE.registerStaticFieldOffset(
+                    k.getDeclaredField("itemOffset"),
+                    k.getDeclaredField("item"));
+                UNSAFE.registerStaticFieldOffset(
+                    k.getDeclaredField("nextOffset"),
+                    k.getDeclaredField("next"));
+
             } catch (Exception e) {
                 throw new Error(e);
             }
@@ -925,16 +932,23 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     // Unsafe mechanics
 
     private static final sun.misc.Unsafe UNSAFE;
-    private static final long headOffset;
-    private static final long tailOffset;
+    private static volatile long headOffset;
+    private static volatile long tailOffset;
     static {
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
             Class<?> k = ConcurrentLinkedQueue.class;
-            headOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("head"));
-            tailOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("tail"));
+//            headOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("head"));
+//            tailOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("tail"));
+           UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("headOffset"),
+                k.getDeclaredField("head"));
+           UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("tailOffset"),
+                k.getDeclaredField("tail"));
+
         } catch (Exception e) {
             throw new Error(e);
         }

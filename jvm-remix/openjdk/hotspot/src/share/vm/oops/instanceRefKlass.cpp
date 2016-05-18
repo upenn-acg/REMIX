@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -44,6 +48,17 @@
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
 #endif // INCLUDE_ALL_GCS
+
+// REMIX
+#include "remix/Rebuilder.hpp"
+
+InstanceRefKlass::InstanceRefKlass(int vtable_len, int itable_len, int static_field_size, int nonstatic_oop_map_size, ReferenceType rt, AccessFlags access_flags, bool is_anonymous)
+    : InstanceKlass(vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt, access_flags, is_anonymous) 
+{
+    // REMIX START
+    set_rebuilder(RebuilderMarkers::ref_marker()); // initialize default (empty) rebuilder
+    // REMIX END
+}
 
 template <class T>
 void specialized_oop_follow_contents(InstanceRefKlass* ref, oop obj) {

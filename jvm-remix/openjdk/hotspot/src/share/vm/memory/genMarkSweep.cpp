@@ -175,6 +175,8 @@ void GenMarkSweep::allocate_stacks() {
 
   _preserved_marks = (PreservedMark*)scratch;
   _preserved_count = 0;
+
+    //tty->print("Allocate_stacks(): _preserved_marks=%p _preserved_count=%i\n", _preserved_marks, _preserved_count);
 }
 
 

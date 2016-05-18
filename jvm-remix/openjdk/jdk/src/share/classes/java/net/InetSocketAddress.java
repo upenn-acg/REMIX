@@ -302,13 +302,18 @@ public class InetSocketAddress
         throw new InvalidObjectException("Stream data required");
     }
 
-    private static final long FIELDS_OFFSET;
+    private static volatile long FIELDS_OFFSET;
     private static final sun.misc.Unsafe UNSAFE;
     static {
         try {
             sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
-            FIELDS_OFFSET = unsafe.objectFieldOffset(
-                    InetSocketAddress.class.getDeclaredField("holder"));
+//            FIELDS_OFFSET = unsafe.objectFieldOffset(
+//                    InetSocketAddress.class.getDeclaredField("holder"));
+            Class k = InetSocketAddress.class;
+            unsafe.registerStaticFieldOffset(
+                k.getDeclaredField("FIELDS_OFFSET"),
+                k.getDeclaredField("holder"));
+
             UNSAFE = unsafe;
         } catch (ReflectiveOperationException e) {
             throw new Error(e);

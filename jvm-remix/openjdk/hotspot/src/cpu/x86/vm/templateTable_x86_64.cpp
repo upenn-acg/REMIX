@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "interpreter/interpreter.hpp"
@@ -2810,9 +2814,12 @@ void TemplateTable::fast_accessfield(TosState state) {
   //   __ shrl(rdx, ConstantPoolCacheEntry::is_volatile_shift);
   //   __ andl(rdx, 0x1);
   // }
+
+    // REMIX START
   __ movptr(rbx, Address(rcx, rbx, Address::times_8,
                          in_bytes(ConstantPoolCache::base_offset() +
                                   ConstantPoolCacheEntry::f2_offset())));
+    // REMIX END
 
   // rax: object
   __ verify_oop(rax);

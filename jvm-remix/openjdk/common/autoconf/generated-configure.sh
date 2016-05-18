@@ -35907,7 +35907,7 @@ fi
     # precompiled headers.
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ccache supports precompiled headers" >&5
 $as_echo_n "checking if ccache supports precompiled headers... " >&6; }
-    HAS_GOOD_CCACHE=`($CCACHE --version | head -n 1 | grep -E 3.1.[456789]) 2> /dev/null`
+    HAS_GOOD_CCACHE=`($CCACHE --version | head -n 1 | grep -E 3.1.[1456789]) 2> /dev/null`
     if test "x$HAS_GOOD_CCACHE" = x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, disabling ccache" >&5
 $as_echo "no, disabling ccache" >&6; }

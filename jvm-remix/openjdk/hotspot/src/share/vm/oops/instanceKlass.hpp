@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #ifndef SHARE_VM_OOPS_INSTANCEKLASS_HPP
 #define SHARE_VM_OOPS_INSTANCEKLASS_HPP
 
@@ -164,6 +168,10 @@ class InstanceKlass: public Klass {
                                           TRAPS);
 
   InstanceKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+
+  // REMIX START
+  virtual Klass* create_same_size_placeholder(TRAPS);
+  // REMIX END
 
   // See "The Java Virtual Machine Specification" section 2.16.2-5 for a detailed description
   // of the class loading & initialization procedure, and the use of the states.

@@ -46,7 +46,7 @@ import java.util.Arrays;
  * Rijndael was designed by <a href="mailto:rijmen@esat.kuleuven.ac.be">Vincent
  * Rijmen</a> and <a href="mailto:Joan.Daemen@village.uunet.be">Joan Daemen</a>.
  */
-final class AESCrypt extends SymmetricCipher implements AESConstants
+public final class AESCrypt extends SymmetricCipher implements AESConstants
 {
     private boolean ROUNDS_12 = false;
     private boolean ROUNDS_14 = false;
@@ -63,7 +63,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
     /** ROUNDS * 4 */
     private int limit = 0;
 
-    AESCrypt() {
+    public AESCrypt() {
         // empty
     }
 

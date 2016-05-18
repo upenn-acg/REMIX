@@ -108,6 +108,11 @@
 #include "opto/idealGraphPrinter.hpp"
 #endif
 
+// REMIX
+#include "remix/FalseSharingFinder.hpp"
+
+extern int threads_created;
+
 #ifdef DTRACE_ENABLED
 
 // Only bother with this argument setup if dtrace is available
@@ -330,6 +335,7 @@ void Thread::record_stack_base_and_size() {
 
 
 Thread::~Thread() {
+
   // Reclaim the objectmonitors from the omFreeList of the moribund thread.
   ObjectSynchronizer::omFlush (this) ;
 
@@ -1562,6 +1568,8 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
   _dirty_card_queue(&_dirty_card_queue_set)
 #endif // INCLUDE_ALL_GCS
 {
+  _perf.init(); // REMIX
+   __sync_fetch_and_add(&threads_created, 1);
   if (TraceThreadEvents) {
     tty->print_cr("creating thread %p", this);
   }
@@ -1588,6 +1596,7 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
 }
 
 JavaThread::~JavaThread() {
+  _perf.close(); // REMIX
   if (TraceThreadEvents) {
       tty->print_cr("terminate thread %p", this);
   }
@@ -1681,7 +1690,6 @@ void JavaThread::run() {
   // Note, thread is no longer valid at this point!
 }
 
-
 void JavaThread::thread_main_inner() {
   assert(JavaThread::current() == this, "sanity check");
   assert(this->threadObj() != NULL, "just checking");
@@ -1694,9 +1702,11 @@ void JavaThread::thread_main_inner() {
     {
       ResourceMark rm(this);
       this->set_native_thread_name(this->get_thread_name());
+      FalseSharingFinder::thread_starting(_perf); // REMIX
     }
     HandleMark hm(this);
     this->entry_point()(this, this);
+    FalseSharingFinder::thread_ending(_perf); // REMIX
   }
 
   DTRACE_THREAD_PROBE(stop, this);
@@ -2600,6 +2610,19 @@ void JavaThread::frames_do(void f(frame*, const RegisterMap* map)) {
     f(fr, fst.register_map());
   }
 }
+
+// REMIX START
+void JavaThread::deoptimize_all() {
+  // BiasedLocking needs an updated RegisterMap for the revoke monitors pass
+  StackFrameStream fst(this, UseBiasedLocking);
+  // Iterate over all frames in the thread and deoptimize
+  for(; !fst.is_done(); fst.next()) {
+    if(fst.current()->can_be_deoptimized()) {
+      Deoptimization::deoptimize(this, *fst.current(), fst.register_map());
+    }
+  }
+}
+// REMIX END
 
 
 #ifndef PRODUCT

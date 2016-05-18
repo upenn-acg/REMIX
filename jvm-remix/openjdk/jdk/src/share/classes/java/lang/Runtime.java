@@ -44,6 +44,13 @@ import sun.reflect.Reflection;
  */
 
 public class Runtime {
+    // REMIX START
+    public native void remixRepairFalseSharing(); 
+    public native void remixTestHeapScanSpeed(int count); 
+    public native void remixPrintObject(Object obj);
+    public native int  remixObjectSize(Object obj); 
+    // REMIX END
+
     private static Runtime currentRuntime = new Runtime();
 
     /**

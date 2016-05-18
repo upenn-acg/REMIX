@@ -1029,13 +1029,17 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
 
     // Unsafe mechanics
     private static final sun.misc.Unsafe UNSAFE;
-    private static final long allocationSpinLockOffset;
+    private static volatile long allocationSpinLockOffset;
     static {
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
             Class<?> k = PriorityBlockingQueue.class;
-            allocationSpinLockOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("allocationSpinLock"));
+            UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("allocationSpinLockOffset"),
+                k.getDeclaredField("allocationSpinLock"));
+
+//            allocationSpinLockOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("allocationSpinLock"));
         } catch (Exception e) {
             throw new Error(e);
         }

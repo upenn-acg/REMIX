@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #ifndef SHARE_VM_MEMORY_SPACE_HPP
 #define SHARE_VM_MEMORY_SPACE_HPP
 
@@ -225,7 +229,7 @@ class Space: public CHeapObj<mtGC> {
 
   // Iterate over all objects in the space, calling "cl.do_object" on
   // each.  Objects allocated by applications of the closure are not
-  // included in the iteration.
+  // included in the iteration. REMIX - WRONG - they are included!
   virtual void object_iterate(ObjectClosure* blk) = 0;
   // Similar to object_iterate() except only iterates over
   // objects whose internal references point to objects in the space.
@@ -407,7 +411,7 @@ private:
 
 public:
   CompactibleSpace() :
-   _compaction_top(NULL), _next_compaction_space(NULL) {}
+   _compaction_top(NULL), _next_compaction_space(NULL), _force_full_adjust(false) {}
 
   virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
   virtual void clear(bool mangle_space);
@@ -487,6 +491,7 @@ protected:
   // Used during compaction.
   HeapWord* _first_dead;
   HeapWord* _end_of_live;
+  bool _force_full_adjust;
 
   // Minimum size of a free block.
   virtual size_t minimum_free_block_size() const = 0;
@@ -508,6 +513,8 @@ protected:
   bool insert_deadspace(size_t& allowed_deadspace_words, HeapWord* q,
                         size_t word_len);
 };
+
+extern FILE* tmp;
 
 #define SCAN_AND_FORWARD(cp,scan_limit,block_is_obj,block_size) {            \
   /* Compute the new addresses for the live objects and store it in the mark \
@@ -751,6 +758,7 @@ protected:
       /* copy object and reinit its mark */                                     \
       assert(q != compaction_top, "everything in this pass should be moving");  \
       Copy::aligned_conjoint_words(q, compaction_top, size);                    \
+      /*if(tmp != NULL) fprintf(tmp, "Copying %p => %p %lx\n", q, compaction_top, size);      */    \
       oop(compaction_top)->init_mark();                                         \
       assert(oop(compaction_top)->klass() != NULL, "should have a class");      \
                                                                                 \
@@ -813,6 +821,11 @@ class ContiguousSpace: public CompactibleSpace {
   WaterMark saved_mark()      { return WaterMark(this, saved_mark_word()); }
   bool saved_mark_at_top() const { return saved_mark_word() == top(); }
 
+  // REMIX START
+  void aefs_prep_for_compact() { _first_dead = _end_of_live = top(); _force_full_adjust = true; }
+  inline void set_top_for_aefs() { _aefs_top = top(); }
+  // REMIX END
+
   // In debug mode mangle (write it with a particular bit
   // pattern) the unused part of a space.
 
@@ -842,7 +855,6 @@ class ContiguousSpace: public CompactibleSpace {
 
   // Override from space.
   bool is_in(const void* p) const;
-
   virtual bool is_free_block(const HeapWord* p) const;
 
   // In a contiguous space we have a more obvious bound on what parts
@@ -863,8 +875,15 @@ class ContiguousSpace: public CompactibleSpace {
 
   // Iteration
   void oop_iterate(ExtendedOopClosure* cl);
-  void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
+  void oop_iterate(MemRegion mr, ExtendedOopClosure* cl); 
   void object_iterate(ObjectClosure* blk);
+
+  // REMIX START
+  void object_iterate(ObjectClosure* blk, HeapWord* top_mark);
+  void aefs_object_iterate(ObjectClosure* blk);
+  void object_iterate(BoolObjectClosure* blk);
+  // REMIX END
+
   // For contiguous spaces this method will iterate safely over objects
   // in the space (i.e., between bottom and top) when at a safepoint.
   void safe_object_iterate(ObjectClosure* blk);
@@ -924,6 +943,10 @@ class ContiguousSpace: public CompactibleSpace {
   // to denote the start of an object.  Objects allocated by
   // applications of the closure *are* included in the iteration.
   virtual void object_iterate_from(WaterMark mark, ObjectClosure* blk);
+  // REMIX START
+  virtual void object_iterate_from(WaterMark mark, HeapWord* topword, ObjectClosure* blk);
+  virtual void object_iterate_from(WaterMark mark, BoolObjectClosure* blk);
+  // REMIX END
 
   // Very inefficient implementation.
   virtual HeapWord* block_start_const(const void* p) const;
@@ -953,6 +976,8 @@ class ContiguousSpace: public CompactibleSpace {
   // space.
   void allocate_temporary_filler(int factor);
 
+private:
+    HeapWord* _aefs_top;
 };
 
 

@@ -2175,16 +2175,22 @@ public class File
         UNSAFE.putIntVolatile(this, PREFIX_LENGTH_OFFSET, fs.prefixLength(path));
     }
 
-    private static final long PATH_OFFSET;
-    private static final long PREFIX_LENGTH_OFFSET;
+    private static volatile long PATH_OFFSET;
+    private static volatile long PREFIX_LENGTH_OFFSET;
     private static final sun.misc.Unsafe UNSAFE;
     static {
         try {
             sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
-            PATH_OFFSET = unsafe.objectFieldOffset(
-                    File.class.getDeclaredField("path"));
-            PREFIX_LENGTH_OFFSET = unsafe.objectFieldOffset(
-                    File.class.getDeclaredField("prefixLength"));
+            unsafe.registerStaticFieldOffset(
+                File.class.getDeclaredField("PATH_OFFSET"),
+                File.class.getDeclaredField("path"));
+            unsafe.registerStaticFieldOffset(
+                File.class.getDeclaredField("PREFIX_LENGTH_OFFSET"),
+                File.class.getDeclaredField("prefixLength"));
+//            PATH_OFFSET = unsafe.objectFieldOffset(
+//                    File.class.getDeclaredField("path"));
+//            PREFIX_LENGTH_OFFSET = unsafe.objectFieldOffset(
+//                    File.class.getDeclaredField("prefixLength"));
             UNSAFE = unsafe;
         } catch (ReflectiveOperationException e) {
             throw new Error(e);

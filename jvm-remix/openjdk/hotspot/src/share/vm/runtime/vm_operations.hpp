@@ -94,6 +94,7 @@
   template(JFRCheckpoint)                         \
   template(Exit)                                  \
   template(LinuxDllLoad)                          \
+  template(FSFixer)               /* REMIX */     \
 
 class VM_Operation: public CHeapObj<mtInternal> {
  public:

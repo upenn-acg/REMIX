@@ -39,6 +39,7 @@ import java.security.InvalidKeyException;
  * @see DESCipher
  */
 
+@sun.misc.Contended
 class DESCrypt extends SymmetricCipher implements DESConstants {
     private static final int s0p[] = {
         0x00410100, 0x00010000, 0x40400000, 0x40410100, 0x00400000,

@@ -191,22 +191,18 @@ public class AtomicStampedReference<V> {
     // Unsafe mechanics
 
     private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
-    private static final long pairOffset =
-        objectFieldOffset(UNSAFE, "pair", AtomicStampedReference.class);
 
     private boolean casPair(Pair<V> cmp, Pair<V> val) {
         return UNSAFE.compareAndSwapObject(this, pairOffset, cmp, val);
     }
+    private static volatile long pairOffset;
 
-    static long objectFieldOffset(sun.misc.Unsafe UNSAFE,
-                                  String field, Class<?> klazz) {
+    static {
         try {
-            return UNSAFE.objectFieldOffset(klazz.getDeclaredField(field));
-        } catch (NoSuchFieldException e) {
-            // Convert Exception to corresponding Error
-            NoSuchFieldError error = new NoSuchFieldError(field);
-            error.initCause(e);
-            throw error;
-        }
+            pairOffset = 0;
+            UNSAFE.registerStaticFieldOffset(
+                AtomicStampedReference.class.getDeclaredField("pairOffset"),
+                AtomicStampedReference.class.getDeclaredField("pair"));
+        } catch (Exception ex) { throw new Error(ex); }
     }
 }

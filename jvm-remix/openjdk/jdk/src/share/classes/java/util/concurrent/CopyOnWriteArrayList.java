@@ -1672,13 +1672,17 @@ public class CopyOnWriteArrayList<E>
         UNSAFE.putObjectVolatile(this, lockOffset, new ReentrantLock());
     }
     private static final sun.misc.Unsafe UNSAFE;
-    private static final long lockOffset;
+    private static volatile long lockOffset;
     static {
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
             Class<?> k = CopyOnWriteArrayList.class;
-            lockOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("lock"));
+//            lockOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("lock"));
+    UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("lockOffset"),
+                k.getDeclaredField("lock"));
+
         } catch (Exception e) {
             throw new Error(e);
         }

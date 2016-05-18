@@ -1214,11 +1214,13 @@ class Random implements java.io.Serializable {
 
     // Support for resetting seed while deserializing
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static final long seedOffset;
+    private static volatile long seedOffset;
     static {
         try {
-            seedOffset = unsafe.objectFieldOffset
-                (Random.class.getDeclaredField("seed"));
+            seedOffset = 0;
+            unsafe.registerStaticFieldOffset(Random.class.getDeclaredField("seedOffset"), Random.class.getDeclaredField("seed"));
+//            seedOffset = unsafe.objectFieldOffset
+//                (Random.class.getDeclaredField("seed"));
         } catch (Exception ex) { throw new Error(ex); }
     }
     private void resetSeed(long seedVal) {

@@ -108,8 +108,14 @@ protected:
   // Callback from VM_GenCollectFull operation.
   // Perform a full collection of the first max_level+1 generations.
   virtual void do_full_collection(bool clear_all_soft_refs);
-  void do_full_collection(bool clear_all_soft_refs, int max_level);
 
+public: 
+  // REMIX START - exports required
+  void do_full_collection(bool clear_all_soft_refs, int max_level); 
+  void resize_tlabs() { resize_all_tlabs(); }
+  // REMIX END
+
+protected:
   // Does the "cause" of GC indicate that
   // we absolutely __must__ clear soft refs?
   bool must_clear_all_soft_refs();

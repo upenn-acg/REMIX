@@ -23,6 +23,9 @@
 # questions.
 #
 
+# Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+# ACG group, University of Pennsylvania.
+
 # Define public interface.
 
 SUNWprivate_1.1 {
@@ -296,6 +299,13 @@ SUNWprivate_1.1 {
 		GetStringPlatformChars;
 		Canonicalize;
 		JDK_GetVersionInfo0;
+
+# REMIX start
+        Java_java_lang_Runtime_remixRepairFalseSharing;
+        Java_java_lang_Runtime_remixTestHeapScanSpeed;
+        Java_java_lang_Runtime_remixPrintObject;
+        Java_java_lang_Runtime_remixObjectSize;
+# REMIX end
 
 	local:
 		*;

@@ -512,13 +512,17 @@ public class ConcurrentSkipListSet<E>
     }
 
     private static final sun.misc.Unsafe UNSAFE;
-    private static final long mapOffset;
+    private static volatile long mapOffset;
     static {
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
             Class<?> k = ConcurrentSkipListSet.class;
-            mapOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("m"));
+            UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("mapOffset"),
+                k.getDeclaredField("m"));
+
+//            mapOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("m"));
         } catch (Exception e) {
             throw new Error(e);
         }

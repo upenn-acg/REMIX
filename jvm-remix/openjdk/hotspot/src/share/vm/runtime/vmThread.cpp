@@ -40,6 +40,9 @@
 #include "utilities/events.hpp"
 #include "utilities/xmlstream.hpp"
 
+// REMIX
+#include "remix/FalseSharingFinder.hpp" 
+
 #ifndef USDT2
 HS_DTRACE_PROBE_DECL3(hotspot, vmops__request, char *, uintptr_t, int);
 HS_DTRACE_PROBE_DECL3(hotspot, vmops__begin, char *, uintptr_t, int);
@@ -248,6 +251,7 @@ void VMThread::destroy() {
 
 void VMThread::run() {
   assert(this == vm_thread(), "check");
+  FalseSharingFinder::init_vm(); // REMIX
 
   this->initialize_thread_local_storage();
   this->record_stack_base_and_size();
@@ -286,6 +290,7 @@ void VMThread::run() {
 
   // 4526887 let VM thread exit at Safepoint
   SafepointSynchronize::begin();
+  FalseSharingFinder::done_vm(); // REMIX
 
   if (VerifyBeforeExit) {
     HandleMark hm(VMThread::vm_thread());
@@ -490,10 +495,10 @@ void VMThread::loop() {
       // If we are at a safepoint we will evaluate all the operations that
       // follow that also require a safepoint
       if (_cur_vm_operation->evaluate_at_safepoint()) {
-
         _vm_queue->set_drain_list(safepoint_ops); // ensure ops can be scanned
 
         SafepointSynchronize::begin();
+        FalseSharingFinder::begin_vmop_safepoint(); // REMIX - notify remix of a safepoint
         evaluate_operation(_cur_vm_operation);
         // now process all queued safepoint ops, iteratively draining
         // the queue until there are none left
@@ -535,6 +540,7 @@ void VMThread::loop() {
         _vm_queue->set_drain_list(NULL);
 
         // Complete safepoint synchronization
+        FalseSharingFinder::end_vmop_safepoint(); // REMIX
         SafepointSynchronize::end();
 
       } else {  // not a safepoint operation

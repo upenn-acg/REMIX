@@ -3712,17 +3712,27 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
     }
 
+    protected static volatile long intCompactOffset;
+    protected static volatile long intValOffset;
+
     private static class UnsafeHolder {
         private static final sun.misc.Unsafe unsafe;
-        private static final long intCompactOffset;
-        private static final long intValOffset;
         static {
             try {
                 unsafe = sun.misc.Unsafe.getUnsafe();
-                intCompactOffset = unsafe.objectFieldOffset
-                    (BigDecimal.class.getDeclaredField("intCompact"));
-                intValOffset = unsafe.objectFieldOffset
-                    (BigDecimal.class.getDeclaredField("intVal"));
+                Class k = BigDecimal.class;
+                unsafe.registerStaticFieldOffset(
+                    k.getDeclaredField("intCompactOffset"),
+                    k.getDeclaredField("intCompact"));
+              unsafe.registerStaticFieldOffset(
+                    k.getDeclaredField("intValOffset"),
+                    k.getDeclaredField("intVal"));
+
+
+//                intCompactOffset = unsafe.objectFieldOffset
+//                    (BigDecimal.class.getDeclaredField("intCompact"));
+//                intValOffset = unsafe.objectFieldOffset
+//                    (BigDecimal.class.getDeclaredField("intVal"));
             } catch (Exception ex) {
                 throw new ExceptionInInitializerError(ex);
             }

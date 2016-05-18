@@ -133,6 +133,10 @@ Mutex*   JfrStream_lock               = NULL;
 Mutex*   JfrThreadGroups_lock         = NULL;
 #endif
 
+// REMIX START
+Monitor* FalseSharingFinder_lock = NULL; 
+// REMIX END
+
 #define MAX_NUM_MUTEX 128
 static Monitor * _mutex_array[MAX_NUM_MUTEX];
 static int _num_mutex;
@@ -280,6 +284,7 @@ void mutex_init() {
   def(JfrStream_lock               , Mutex,   nonleaf+2,   true);
   def(JfrStacktrace_lock           , Mutex,   special,     true );
 #endif
+  def(FalseSharingFinder_lock      , Monitor, nonleaf+2,   true);
 
 }
 

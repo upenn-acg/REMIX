@@ -539,19 +539,28 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
         // Unsafe mechanics
         private static final sun.misc.Unsafe UNSAFE;
-        private static final long itemOffset;
-        private static final long nextOffset;
-        private static final long waiterOffset;
+        private static volatile long itemOffset;
+        private static volatile long nextOffset;
+        private static volatile long waiterOffset;
         static {
             try {
                 UNSAFE = sun.misc.Unsafe.getUnsafe();
                 Class<?> k = Node.class;
-                itemOffset = UNSAFE.objectFieldOffset
-                    (k.getDeclaredField("item"));
-                nextOffset = UNSAFE.objectFieldOffset
-                    (k.getDeclaredField("next"));
-                waiterOffset = UNSAFE.objectFieldOffset
-                    (k.getDeclaredField("waiter"));
+//                itemOffset = UNSAFE.objectFieldOffset
+//                    (k.getDeclaredField("item"));
+//                nextOffset = UNSAFE.objectFieldOffset
+//                    (k.getDeclaredField("next"));
+//                waiterOffset = UNSAFE.objectFieldOffset
+//                    (k.getDeclaredField("waiter"));
+            UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("itemOffset"),
+                k.getDeclaredField("item"));
+            UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("nextOffset"),
+                k.getDeclaredField("next"));
+            UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("waiterOffset"),
+                k.getDeclaredField("waiter"));
             } catch (Exception e) {
                 throw new Error(e);
             }
@@ -1457,19 +1466,29 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     // Unsafe mechanics
 
     private static final sun.misc.Unsafe UNSAFE;
-    private static final long headOffset;
-    private static final long tailOffset;
-    private static final long sweepVotesOffset;
+    private static volatile long headOffset;
+    private static volatile long tailOffset;
+    private static volatile long sweepVotesOffset;
     static {
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
             Class<?> k = LinkedTransferQueue.class;
-            headOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("head"));
-            tailOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("tail"));
-            sweepVotesOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("sweepVotes"));
+//            headOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("head"));
+//            tailOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("tail"));
+//            sweepVotesOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("sweepVotes"));
+            UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("headOffset"),
+                k.getDeclaredField("head"));
+            UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("tailOffset"),
+                k.getDeclaredField("tail"));
+            UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("sweepVotesOffset"),
+                k.getDeclaredField("sweepVotes"));
+
         } catch (Exception e) {
             throw new Error(e);
         }

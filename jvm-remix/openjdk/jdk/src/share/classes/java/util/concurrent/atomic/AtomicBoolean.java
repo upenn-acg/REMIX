@@ -51,12 +51,14 @@ public class AtomicBoolean implements java.io.Serializable {
     private static final long serialVersionUID = 4654671469794556979L;
     // setup to use Unsafe.compareAndSwapInt for updates
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static final long valueOffset;
+    private static volatile long valueOffset;
 
     static {
         try {
-            valueOffset = unsafe.objectFieldOffset
-                (AtomicBoolean.class.getDeclaredField("value"));
+            valueOffset = 0;
+            unsafe.registerStaticFieldOffset(
+                AtomicBoolean.class.getDeclaredField("valueOffset"),
+                AtomicBoolean.class.getDeclaredField("value"));
         } catch (Exception ex) { throw new Error(ex); }
     }
 

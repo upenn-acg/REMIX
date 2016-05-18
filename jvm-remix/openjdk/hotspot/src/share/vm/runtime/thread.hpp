@@ -61,6 +61,10 @@
 #endif
 #endif
 
+// REMIX
+#include "remix/HitmEventProf.hpp" 
+#include "remix/FalseSharingFinder.hpp" 
+
 class ThreadSafepointState;
 class ThreadProfiler;
 
@@ -782,6 +786,8 @@ typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class JavaThread: public Thread {
   friend class VMStructs;
+
+
  private:
   JavaThread*    _next;                          // The next thread in the Threads list
   oop            _threadObj;                     // The Java level thread object
@@ -1483,6 +1489,7 @@ public:
   // Returns the number of stack frames on the stack
   int depth() const;
 
+  void deoptimize_all(); // REMIX
   // Function for testing deoptimization
   void deoptimize();
   void make_zombies();
@@ -1761,6 +1768,14 @@ private:
 public:
   int get_claimed_par_id() { return _claimed_par_id; }
   void set_claimed_par_id(int id) { _claimed_par_id = id;}
+
+  // REMIX START
+private:
+  HitmEventProf _perf; 
+public:
+  inline HitmEventProf& getPerf() { return _perf; }
+  void merge_fs_data() { FalseSharingFinder::parallel_merge_fs_data(_perf); }
+  // REMIX END
 };
 
 // Inline implementation of JavaThread::current

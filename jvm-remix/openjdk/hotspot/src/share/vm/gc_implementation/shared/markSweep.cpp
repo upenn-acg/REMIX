@@ -98,6 +98,7 @@ void MarkSweep::preserve_mark(oop obj, markOop mark) {
   // this is storage which should be available.  Most of the time this should be
   // sufficient space for the marks we need to preserve but if it isn't we fall
   // back to using Stacks to keep track of the overflow.
+//  if(_preserved_count == 0) tty->print("PreserveMark(): first, count=%i obj=%p\n", _preserved_count, obj); 
   if (_preserved_count < _preserved_count_max) {
     _preserved_marks[_preserved_count++].init(obj, mark);
   } else {

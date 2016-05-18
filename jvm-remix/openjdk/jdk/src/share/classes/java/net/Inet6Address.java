@@ -575,14 +575,19 @@ class Inet6Address extends InetAddress {
          new ObjectStreamField("ifname", String.class)
     };
 
-    private static final long FIELDS_OFFSET;
+    private static volatile long FIELDS_OFFSET;
     private static final sun.misc.Unsafe UNSAFE;
 
     static {
         try {
             sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
-            FIELDS_OFFSET = unsafe.objectFieldOffset(
-                    Inet6Address.class.getDeclaredField("holder6"));
+//            FIELDS_OFFSET = unsafe.objectFieldOffset(
+//                    Inet6Address.class.getDeclaredField("holder6"));
+             Class k = Inet6Address.class;
+             unsafe.registerStaticFieldOffset(
+                k.getDeclaredField("FIELDS_OFFSET"),
+                k.getDeclaredField("holder6"));
+
             UNSAFE = unsafe;
         } catch (ReflectiveOperationException e) {
             throw new Error(e);

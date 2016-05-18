@@ -63,8 +63,12 @@ void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size, bool read_only,
                                  MetaspaceObj::Type type, TRAPS) throw() {
   // Klass has it's own operator new
-  return Metaspace::allocate(loader_data, word_size, read_only,
+//  return Metaspace::allocate(loader_data, word_size, read_only,
+//                             type, CHECK_NULL);
+  void* res= Metaspace::allocate(loader_data, word_size, read_only,
                              type, CHECK_NULL);
+    //printf("Allocated metaspace object of size %li word size %li, type %i at %p class_loader_data=%p\n", size, word_size, type, res, loader_data);
+  return res;
 }
 
 bool MetaspaceObj::is_shared() const {
@@ -687,6 +691,8 @@ void* Arena::internal_malloc_4(size_t x) {
 //  Java_sun_security_ec_ECKeyPairGenerator_generateECKeyPair
 // define ALLOW_OPERATOR_NEW_USAGE for platform on which global operator new allowed.
 //
+// XXX AE AE AE
+#define ALLOW_OPERATOR_NEW_USAGE
 #ifndef ALLOW_OPERATOR_NEW_USAGE
 void* operator new(size_t size) throw() {
   assert(false, "Should not call global operator new");

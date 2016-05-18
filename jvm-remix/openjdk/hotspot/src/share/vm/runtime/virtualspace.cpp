@@ -218,6 +218,9 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
          "area must be distinguisable from marks for mark-sweep");
   assert(markOopDesc::encode_pointer_as_mark(&_base[size])->decode_pointer() == &_base[size],
          "area must be distinguisable from marks for mark-sweep");
+
+    /// XXX AE
+//    printf("** Allocated reserved space from %p to %p, large=%i noaccess_prefix=%li executable=%i size=%li\n", _base, ((char*)_base) + _size, (int)large, noaccess_prefix, (int)executable, size);
 }
 
 

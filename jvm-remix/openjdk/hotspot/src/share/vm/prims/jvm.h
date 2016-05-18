@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #ifndef SHARE_VM_PRIMS_JVM_H
 #define SHARE_VM_PRIMS_JVM_H
 
@@ -144,6 +148,18 @@ JVM_OnExit(void (*func)(void));
 /*
  * java.lang.Runtime
  */
+
+// REMIX START
+JNIEXPORT void JNICALL
+JVM_remixRepairFalseSharing();
+JNIEXPORT void JNICALL
+JVM_remixTestHeapScanSpeed();
+JNIEXPORT jint JNICALL
+JVM_remixGetObjectSize();
+JNIEXPORT void JNICALL
+JVM_remixPrintObject(jobject obj);
+// REMIX END
+
 JNIEXPORT void JNICALL
 JVM_Exit(jint code);
 
@@ -178,6 +194,15 @@ JVM_TraceMethodCalls(jboolean on);
 
 JNIEXPORT jlong JNICALL
 JVM_TotalMemory(void);
+
+JNIEXPORT void JNICALL
+JVM_remix_repair_false_sharing();
+JNIEXPORT void JNICALL
+JVM_remix_test_heap_scan_speed(jint count);
+JNIEXPORT void JNICALL
+JVM_remix_print_object(jobject obj);
+JNIEXPORT jint JNICALL
+JVM_remix_object_size(jobject obj);
 
 JNIEXPORT jlong JNICALL
 JVM_FreeMemory(void);

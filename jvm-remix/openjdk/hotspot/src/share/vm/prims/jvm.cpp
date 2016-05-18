@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
@@ -79,6 +83,9 @@
 #ifdef TARGET_OS_FAMILY_bsd
 # include "jvm_bsd.h"
 #endif
+
+// REMIX
+#include "remix/FalseSharingFinder.hpp"
 
 #include <errno.h>
 
@@ -392,6 +399,29 @@ JVM_END
 // java.lang.Runtime /////////////////////////////////////////////////////////////////////////
 
 extern volatile jint vm_created;
+
+//REMIX START
+JVM_ENTRY_NO_ENV(void, JVM_remix_repair_false_sharing())
+  JVMWrapper("JVM_remix_repair_false_sharing");
+  FalseSharingFinder::repair_fs();
+JVM_END
+JVM_ENTRY_NO_ENV(void, JVM_remix_test_heap_scan_speed(jint count))
+  JVMWrapper("JVM_remix_test_heap_scan_speed");
+  FalseSharingFinder::test_speed(count);
+JVM_END
+JVM_ENTRY_NO_ENV(jint, JVM_remix_object_size(jobject obj))
+  JVMWrapper("JVM_remix_object_size");
+  oop ptr = JNIHandles::resolve(obj);
+  return ptr->klass()->layout_helper() & ~(sizeof(HeapWord) - 1);
+JVM_END
+JVM_ENTRY_NO_ENV(void, JVM_remix_print_object(jobject obj))
+  JVMWrapper("JVM_remix_print_object");
+  oop ptr = JNIHandles::resolve(obj);
+  tty->print("PTR at: %p, klass=%p\n", ptr, ptr->klass());
+  ptr->print_on(tty);
+  ptr->klass()->print_on(tty);
+JVM_END
+// REMIX END
 
 JVM_ENTRY_NO_ENV(void, JVM_Exit(jint code))
   if (vm_created != 0 && (code == 0)) {

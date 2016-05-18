@@ -102,10 +102,14 @@ inline narrowKlass* oopDesc::compressed_klass_addr() {
   return &_metadata._compressed_klass;
 }
 
+//extern FILE* tmp;
+
 inline void oopDesc::set_klass(Klass* k) {
   // since klasses are promoted no store check is needed
   assert(Universe::is_bootstrapping() || k != NULL, "must be a real Klass*");
   assert(Universe::is_bootstrapping() || k->is_klass(), "not a Klass*");
+  //if(tmp != NULL)
+  //  fprintf(tmp, "set_klass(%p): %p\n", this, k);
   if (UseCompressedClassPointers) {
     *compressed_klass_addr() = Klass::encode_klass_not_null(k);
   } else {

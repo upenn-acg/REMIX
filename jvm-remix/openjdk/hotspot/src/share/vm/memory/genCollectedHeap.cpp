@@ -1059,6 +1059,65 @@ GenCollectedHeap* GenCollectedHeap::heap() {
   return _gch;
 }
 
+#if 0
+namespace XXX {
+class HeapObjDump : public ObjectClosure
+{
+public:
+    Space* _space;
+    FILE* _file;
+    HeapObjDump(Space* space, FILE* file) : _space(space), _file(file) { }
+    virtual void do_object(oop o) 
+    {
+        Klass* k = o->klass();
+        fprintf(_file, "  OOP: %p size=0x%lx osize=0x%x rs=0x%lx mark=0x%lx klass=%p\n", o, _space->block_size((HeapWord*)o), o->size(), o->size() * sizeof(HeapWord),(uintptr_t)o->mark(), k);
+        while(k != NULL)
+        {
+            if(strcmp(k->signature_name(), "[LTst2;") == 0)
+                o->print();
+
+            fprintf(_file, "  KLASS: %s\n", k->signature_name());
+            k = k->super();
+        }
+//        o->print_value();
+        fprintf(_file, "\n");
+    }
+};
+
+class HeapDump : public SpaceClosure
+{
+public:
+    static int count;
+    FILE* _file;
+    int _spcount;
+    HeapDump()
+    {
+        char name[100];
+        sprintf(name, "dump_%i_%i.txt", getpid(), count ++);
+        printf("Dumping heap to %s\n", name);
+        _file = fopen(name, "w");
+        _spcount = 0;
+    }
+    ~HeapDump()
+    {
+        fclose(_file);
+    }
+
+
+    virtual void do_space(Space* space)
+    {
+        ContiguousSpace* sp = space->toContiguousSpace();
+        assert(sp != NULL, "space->toContiguousSpace()");
+        fprintf(_file, "= Space[%i] %p - %p - %p, used=%lxp\n", _spcount++, space->bottom(), sp->top(), space->end(), space->used())
+;
+        HeapObjDump od(space,  _file);
+        sp->object_iterate(&od, sp->top());
+    }
+
+};
+int HeapDump::count = 0;
+}
+#endif
 
 void GenCollectedHeap::prepare_for_compaction() {
   guarantee(_n_gens = 2, "Wrong number of generations");

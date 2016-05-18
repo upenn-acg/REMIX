@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_MARKSWEEP_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_SHARED_MARKSWEEP_HPP
 
@@ -109,6 +113,13 @@ class MarkSweep : AllStatic {
   friend class VM_MarkSweep;
   friend void marksweep_init();
 
+  public:
+    // REMIX START
+    inline static void assert_marking_stack_empty() { assert(_marking_stack.is_empty(), "Marking should have completed"); }
+    // REMIX END
+
+  public:
+   static void* getMarksAddr() { return _preserved_marks; } // HACK HACK HACK for SFC
   //
   // Vars
   //
@@ -134,7 +145,6 @@ class MarkSweep : AllStatic {
   static SerialOldTracer*                _gc_tracer;
 
   // Non public closures
-  static KeepAliveClosure keep_alive;
 
   // Debugging
   static void trace(const char* msg) PRODUCT_RETURN;
@@ -142,6 +152,9 @@ class MarkSweep : AllStatic {
  public:
   // Public closures
   static IsAliveClosure       is_alive;
+  // REMIX START
+  static KeepAliveClosure     keep_alive;  // REMIX needs access to this closure
+  // REMIX END
   static FollowRootClosure    follow_root_closure;
   static CodeBlobToOopClosure follow_code_root_closure; // => follow_root_closure
   static MarkAndPushClosure   mark_and_push_closure;
@@ -155,6 +168,9 @@ class MarkSweep : AllStatic {
 
   // Reference Processing
   static ReferenceProcessor* const ref_processor() { return _ref_processor; }
+  // REMIX START
+  static void set_ref_processor(ReferenceProcessor* rf) { _ref_processor = rf; } // We need to set the reference processor 
+  // REMIX END
 
   static STWGCTimer* gc_timer() { return _gc_timer; }
   static SerialOldTracer* gc_tracer() { return _gc_tracer; }

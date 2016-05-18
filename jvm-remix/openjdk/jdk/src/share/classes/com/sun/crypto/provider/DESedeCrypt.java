@@ -40,6 +40,7 @@ import java.security.InvalidKeyException;
  * @see DESCipher
  */
 
+@sun.misc.Contended
 final class DESedeCrypt extends DESCrypt implements DESConstants {
 
     /*

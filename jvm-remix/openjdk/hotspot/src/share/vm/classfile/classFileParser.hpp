@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #ifndef SHARE_VM_CLASSFILE_CLASSFILEPARSER_HPP
 #define SHARE_VM_CLASSFILE_CLASSFILEPARSER_HPP
 
@@ -444,7 +448,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   // lays out fields in class and returns the total oopmap count
   void layout_fields(Handle class_loader, FieldAllocationCount* fac,
                      ClassAnnotationCollector* parsed_annotations,
-                     FieldLayoutInfo* info, TRAPS);
+                     FieldLayoutInfo* info, bool is_reference_class /*REMIX*/, TRAPS);
 
  public:
   // Constructor

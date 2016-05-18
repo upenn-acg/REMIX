@@ -50,8 +50,11 @@ public class ReferenceQueue<T> {
     static ReferenceQueue<Object> ENQUEUED = new Null<>();
 
     static private class Lock { };
+//    @sun.misc.Contended
     private Lock lock = new Lock();
+//    @sun.misc.Contended
     private volatile Reference<? extends T> head = null;
+//    @sun.misc.Contended
     private long queueLength = 0;
 
     boolean enqueue(Reference<? extends T> r) { /* Called only by Reference class */

@@ -140,11 +140,13 @@ Method* Klass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
 }
 
 void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, /*read_only*/false,
+  void *res = Metaspace::allocate(loader_data, word_size, /*read_only*/false,
                              MetaspaceObj::ClassType, CHECK_NULL);
+    //printf("Allocated metaspace klass of size %li word size %li, at %p class_loader_data=%p\n", size, word_size, res, loader_data);
+    return res;
 }
 
-Klass::Klass() {
+Klass::Klass(){
   Klass* k = this;
 
   // Preinitialize supertype information.
@@ -168,6 +170,8 @@ Klass::Klass() {
   set_subklass(NULL);
   set_next_sibling(NULL);
   set_next_link(NULL);
+  clear_rebuilder();
+  _fs_blank_count = 0;
   TRACE_INIT_ID(this);
 
   set_prototype_header(markOopDesc::prototype());

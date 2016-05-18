@@ -112,7 +112,10 @@ template <class T> inline void FastScanClosure::do_oop_work(T* p) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
     if ((HeapWord*)obj < _boundary) {
       assert(!_g->to()->is_in_reserved(obj), "Scanning field twice?");
-      oop new_obj = obj->is_forwarded() ? obj->forwardee()
+//      oop new_obj = obj->is_forwarded() ? obj->forwardee()
+//                                        : _g->copy_to_survivor_space(obj);
+      bool is_forwarded = obj->is_forwarded();
+      oop new_obj = is_forwarded ? obj->forwardee()
                                         : _g->copy_to_survivor_space(obj);
       oopDesc::encode_store_heap_oop_not_null(p, new_obj);
       if (is_scanning_a_klass()) {

@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -224,6 +228,28 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(
   return ik;
 }
 
+// REMIX START
+Klass* InstanceKlass::create_same_size_placeholder(TRAPS)
+{
+    InstanceKlass *res = (InstanceKlass*)Metaspace::allocate(_class_loader_data, size(), /*read_only*/false,
+                             MetaspaceObj::ClassType, CHECK_NULL);
+    if(res == NULL)
+        return NULL;
+    
+    memcpy(res, this, size() * sizeof(HeapWord));
+    res->_constants = NULL; // make sure no one really tries to use the bad klass!
+    res->_super = NULL;
+    res->_rebuilder = NULL;
+
+    // DON'T CLEAR THESE TWO, THERE ARE NEEDED FOR THE OOP MAP STUFF
+    //res->_fields = NULL; // make sure no one really tries to use the bad klass! - needed for oop map?
+    //res->_nonstatic_oop_map_size = 0; // needed for oop map?
+   
+    _name->increment_refcount();
+
+    return (Klass*)res;
+}
+// REMIX END
 
 // copy method ordering from resource area to Metaspace
 void InstanceKlass::copy_method_ordering(intArray* m, TRAPS) {
@@ -1105,6 +1131,7 @@ instanceOop InstanceKlass::allocate_instance(TRAPS) {
   if (has_finalizer_flag && !RegisterFinalizersAtInit) {
     i = register_finalizer(i, CHECK_NULL);
   }
+
   return i;
 }
 

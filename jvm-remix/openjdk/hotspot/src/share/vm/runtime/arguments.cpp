@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #include "precompiled.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/symbolTable.hpp"
@@ -2534,8 +2538,27 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         build_jvm_args(option->optionString);
     }
 
+    // REMIX START
+    if (match_option(option, "-remix", &tail)) {
+        if(strcmp(tail, "") == 0 || strcmp(tail, ":online") == 0)
+        {
+            FLAG_SET_CMDLINE(uintx, REMIXLevel, REMIX_REPAIR_ONLINE);
+            FLAG_SET_CMDLINE(bool, UseParNewGC, true);
+        }
+        else if(strcmp(tail, ":detect") == 0) {
+            FLAG_SET_CMDLINE(uintx, REMIXLevel, REMIX_DETECT);
+            FLAG_SET_CMDLINE(bool, UseG1GC, true);
+        }
+        else if(strcmp(tail, ":offline") == 0) {
+            FLAG_SET_CMDLINE(uintx, REMIXLevel, REMIX_REPAIR_OFFLINE);
+        }
+        else {
+          jio_fprintf(defaultStream::error_stream(), "Unknown remix flag: '%s'", tail);
+          return JNI_ERR;
+        }
+    // REMIX END
     // -verbose:[class/gc/jni]
-    if (match_option(option, "-verbose", &tail)) {
+    } else if (match_option(option, "-verbose", &tail)) {
       if (!strcmp(tail, ":class") || !strcmp(tail, "")) {
         FLAG_SET_CMDLINE(bool, TraceClassLoading, true);
         FLAG_SET_CMDLINE(bool, TraceClassUnloading, true);
@@ -3643,6 +3666,17 @@ jint Arguments::apply_ergo() {
   set_heap_size();
 
 #if INCLUDE_ALL_GCS
+    // REMIX START
+  if(REMIXLevel != REMIX_NONE)
+  {
+    if(!(UseG1GC || UseParNewGC || UseSerialGC))
+    {
+        vm_exit_during_initialization(
+            "Unsupported GC for REMIX", NULL);
+    }
+    if(REMIXDebug) REMIXVerbose = true;
+  }
+  // REMIX END
   // Set per-collector flags
   if (UseParallelGC || UseParallelOldGC) {
     set_parallel_gc_flags();
@@ -3664,6 +3698,9 @@ jint Arguments::apply_ergo() {
   }
 #else // INCLUDE_ALL_GCS
   assert(verify_serial_gc_flags(), "SerialGC unset");
+    // REMIX START
+  assert(REMIXLevel == AEFS_NONE);
+    // REMIX END
 #endif // INCLUDE_ALL_GCS
 
   // Initialize Metaspace flags and alignments.

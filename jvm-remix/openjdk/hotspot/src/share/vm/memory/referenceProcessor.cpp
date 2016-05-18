@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -34,6 +38,10 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/jniHandles.hpp"
+
+// REMIX START
+ReferencePolicy* ReferenceProcessor::_never_clear_policy = new NeverClearPolicy();
+// REMIX END
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
@@ -102,7 +110,8 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   _discovered_list_needs_barrier(discovered_list_needs_barrier),
   _bs(NULL),
   _processing_is_mt(mt_processing),
-  _next_id(0)
+  _next_id(0),
+  _current_weak_ref_policy(NULL)
 {
   _span = span;
   _discovery_is_atomic = atomic_discovery;
@@ -137,8 +146,11 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
 void ReferenceProcessor::verify_no_references_recorded() {
   guarantee(!_discovering_refs, "Discovering refs?");
   for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
-    guarantee(_discovered_refs[i].is_empty(),
-              "Found non-empty discovered list");
+// REMIX START
+//   XXX XXX XXX !!!!
+//    guarantee(_discovered_refs[i].is_empty(),
+//              "Found non-empty discovered list");
+// REMIX END
   }
 }
 #endif
@@ -230,7 +242,7 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   {
     GCTraceTime tt("WeakReference", trace_time, false, gc_timer);
     weak_count =
-      process_discovered_reflist(_discoveredWeakRefs, NULL, true,
+      process_discovered_reflist(_discoveredWeakRefs, _current_weak_ref_policy, true,
                                  is_alive, keep_alive, complete_gc, task_executor);
   }
 
@@ -239,7 +251,7 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   {
     GCTraceTime tt("FinalReference", trace_time, false, gc_timer);
     final_count =
-      process_discovered_reflist(_discoveredFinalRefs, NULL, false,
+      process_discovered_reflist(_discoveredFinalRefs, _current_weak_ref_policy, false,
                                  is_alive, keep_alive, complete_gc, task_executor);
   }
 
@@ -248,7 +260,7 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   {
     GCTraceTime tt("PhantomReference", trace_time, false, gc_timer);
     phantom_count =
-      process_discovered_reflist(_discoveredPhantomRefs, NULL, false,
+      process_discovered_reflist(_discoveredPhantomRefs, _current_weak_ref_policy, false,
                                  is_alive, keep_alive, complete_gc, task_executor);
   }
 
@@ -1183,6 +1195,11 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
       return false;  // referent is reachable
     }
   }
+  // REMIX START
+  if(_current_weak_ref_policy != NULL)
+        return false;
+  // REMIX END
+
   if (rt == REF_SOFT) {
     // For soft refs we can decide now if these are not
     // current candidates for clearing, in which case we
@@ -1218,8 +1235,8 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
       // Check assumption that an object is not potentially
       // discovered twice except by concurrent collectors that potentially
       // trace the same Reference object twice.
-      assert(UseConcMarkSweepGC || UseG1GC,
-             "Only possible with a concurrent marking collector");
+      /*assert(UseConcMarkSweepGC || UseG1GC,
+             "Only possible with a concurrent marking collector");*/ // REMIX XXX !
       return true;
     }
   }

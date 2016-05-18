@@ -500,8 +500,14 @@ void DefNewGeneration::object_iterate(ObjectClosure* blk) {
 }
 
 
+//extern FILE* tmp;
+
 void DefNewGeneration::space_iterate(SpaceClosure* blk,
                                      bool usedOnly) {
+   //if(tmp != NULL) fprintf(tmp, "EDEN: %p - %p\n", eden()->bottom(), eden()->end());
+   //if(tmp != NULL) fprintf(tmp, "FROM: %p - %p\n", from()->bottom(), from()->end());
+   //if(tmp != NULL) fprintf(tmp, "TO  : %p - %p\n", to()->bottom(), to()->end());
+
   blk->do_space(eden());
   blk->do_space(from());
   blk->do_space(to());

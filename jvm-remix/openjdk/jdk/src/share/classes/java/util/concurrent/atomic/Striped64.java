@@ -126,13 +126,14 @@ abstract class Striped64 extends Number {
 
         // Unsafe mechanics
         private static final sun.misc.Unsafe UNSAFE;
-        private static final long valueOffset;
+        private static volatile long valueOffset;
         static {
             try {
                 UNSAFE = sun.misc.Unsafe.getUnsafe();
-                Class<?> ak = Cell.class;
-                valueOffset = UNSAFE.objectFieldOffset
-                    (ak.getDeclaredField("value"));
+                valueOffset = 0;
+                UNSAFE.registerStaticFieldOffset(
+                    Striped64.class.getDeclaredField("valueOffset"),
+                    Striped64.class.getDeclaredField("value"));
             } catch (Exception e) {
                 throw new Error(e);
             }
@@ -391,17 +392,20 @@ abstract class Striped64 extends Number {
 
     // Unsafe mechanics
     private static final sun.misc.Unsafe UNSAFE;
-    private static final long BASE;
-    private static final long CELLSBUSY;
-    private static final long PROBE;
+    private static volatile long BASE;
+    private static volatile long CELLSBUSY;
+    private static volatile long PROBE;
     static {
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
             Class<?> sk = Striped64.class;
-            BASE = UNSAFE.objectFieldOffset
-                (sk.getDeclaredField("base"));
-            CELLSBUSY = UNSAFE.objectFieldOffset
-                (sk.getDeclaredField("cellsBusy"));
+
+            UNSAFE.registerStaticFieldOffset(
+                sk.getDeclaredField("BASE"),
+                sk.getDeclaredField("base"));
+            UNSAFE.registerStaticFieldOffset(
+                sk.getDeclaredField("CELLSBUSY"),
+                sk.getDeclaredField("cellsBusy"));
             Class<?> tk = Thread.class;
             PROBE = UNSAFE.objectFieldOffset
                 (tk.getDeclaredField("threadLocalRandomProbe"));

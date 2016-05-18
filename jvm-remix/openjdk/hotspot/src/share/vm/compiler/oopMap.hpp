@@ -293,6 +293,7 @@ class DerivedPointerTable : public AllStatic {
    static GrowableArray<DerivedPointerEntry*>* _list;
    static bool _active;                      // do not record pointers for verify pass etc.
  public:
+  static void reset();
   static void clear();                       // Called before scavenge/GC
   static void add(oop *derived, oop *base);  // Called during scavenge/GC
   static void update_pointers();             // Called after  scavenge/GC

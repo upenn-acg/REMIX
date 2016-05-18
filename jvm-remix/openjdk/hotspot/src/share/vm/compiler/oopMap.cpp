@@ -625,6 +625,15 @@ void DerivedPointerTable::clear() {
   }
   _active = true;
 }
+void DerivedPointerTable::reset() {
+  if (_list == NULL) {
+    _list = new (ResourceObj::C_HEAP, mtCompiler) GrowableArray<DerivedPointerEntry*>(10, true); // Allocated on C heap
+  } else {
+    _list->clear();
+  }
+  _active = true;
+}
+
 
 
 // Returns value of location as an int
@@ -635,7 +644,21 @@ void DerivedPointerTable::add(oop *derived_loc, oop *base_loc) {
   assert(Universe::heap()->is_in_or_null(*base_loc), "not an oop");
   assert(derived_loc != base_loc, "Base and derived in same location");
   if (_active) {
-    assert(*derived_loc != (oop)base_loc, "location already added");
+//    assert(*derived_loc != (oop)base_loc, "location already added"); // REMIX
+    if(*derived_loc == (oop)base_loc)
+    {
+        if (TraceDerivedPointers) {
+          intptr_t offset = value_of_loc(derived_loc) - value_of_loc(base_loc);
+          tty->print_cr(
+            "Skipped adding derived pointer@" INTPTR_FORMAT
+            " - Derived: " INTPTR_FORMAT
+            " Base: " INTPTR_FORMAT " (@" INTPTR_FORMAT ") (Offset: %d)",
+            derived_loc, (address)*derived_loc, (address)*base_loc, base_loc, offset
+            );
+        }
+        return;
+    }
+
     assert(_list != NULL, "list must exist");
     intptr_t offset = value_of_loc(derived_loc) - value_of_loc(base_loc);
     // This assert is invalid because derived pointers can be

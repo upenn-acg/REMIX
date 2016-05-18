@@ -2262,7 +2262,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             if (as == null || (m = as.length - 1) < 0 ||
                 (a = as[ThreadLocalRandom.getProbe() & m]) == null ||
                 !(uncontended =
-                  U.compareAndSwapLong(a, CELLVALUE, v = a.value, v + x))) {
+                  U.compareAndSwapLong(a, CounterCell.CELLVALUE, v = a.value, v + x))) {
                 fullAddCount(x, uncontended);
                 return;
             }
@@ -2505,6 +2505,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     @sun.misc.Contended static final class CounterCell {
         volatile long value;
+        static volatile long CELLVALUE;
         CounterCell(long x) { value = x; }
     }
 
@@ -2558,7 +2559,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
                 else if (!wasUncontended)       // CAS already known to fail
                     wasUncontended = true;      // Continue after rehash
-                else if (U.compareAndSwapLong(a, CELLVALUE, v = a.value, v + x))
+                else if (U.compareAndSwapLong(a, CounterCell.CELLVALUE, v = a.value, v + x))
                     break;
                 else if (counterCells != as || n >= NCPU)
                     collide = false;            // At max size or stale
@@ -2716,6 +2717,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * not) to complete before tree restructuring operations.
      */
     static final class TreeBin<K,V> extends Node<K,V> {
+        static volatile long LOCKSTATE;
         TreeNode<K,V> root;
         volatile TreeNode<K,V> first;
         volatile Thread waiter;
@@ -3241,13 +3243,17 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
 
         private static final sun.misc.Unsafe U;
-        private static final long LOCKSTATE;
+//        private static final long LOCKSTATE;
         static {
             try {
                 U = sun.misc.Unsafe.getUnsafe();
                 Class<?> k = TreeBin.class;
-                LOCKSTATE = U.objectFieldOffset
-                    (k.getDeclaredField("lockState"));
+                TreeBin.LOCKSTATE = 0;
+                U.registerStaticFieldOffset(
+                    k.getDeclaredField("LOCKSTATE"),
+                    k.getDeclaredField("lockState"));
+//                LOCKSTATE = U.objectFieldOffset
+//                    (k.getDeclaredField("lockState"));
             } catch (Exception e) {
                 throw new Error(e);
             }
@@ -6276,11 +6282,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     // Unsafe mechanics
     private static final sun.misc.Unsafe U;
-    private static final long SIZECTL;
-    private static final long TRANSFERINDEX;
-    private static final long BASECOUNT;
-    private static final long CELLSBUSY;
-    private static final long CELLVALUE;
+    private static volatile long SIZECTL;
+    private static volatile long TRANSFERINDEX;
+    private static volatile long BASECOUNT;
+    private static volatile long CELLSBUSY;
     private static final long ABASE;
     private static final int ASHIFT;
 
@@ -6288,17 +6293,23 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         try {
             U = sun.misc.Unsafe.getUnsafe();
             Class<?> k = ConcurrentHashMap.class;
-            SIZECTL = U.objectFieldOffset
-                (k.getDeclaredField("sizeCtl"));
-            TRANSFERINDEX = U.objectFieldOffset
-                (k.getDeclaredField("transferIndex"));
-            BASECOUNT = U.objectFieldOffset
-                (k.getDeclaredField("baseCount"));
-            CELLSBUSY = U.objectFieldOffset
-                (k.getDeclaredField("cellsBusy"));
+            U.registerStaticFieldOffset(
+                k.getDeclaredField("SIZECTL"),
+                k.getDeclaredField("sizeCtl"));
+            U.registerStaticFieldOffset(
+                k.getDeclaredField("TRANSFERINDEX"),
+                k.getDeclaredField("transferIndex"));
+            U.registerStaticFieldOffset(
+                k.getDeclaredField("BASECOUNT"),
+                k.getDeclaredField("baseCount"));
+            U.registerStaticFieldOffset(
+                k.getDeclaredField("CELLSBUSY"),
+                k.getDeclaredField("cellsBusy"));
+
             Class<?> ck = CounterCell.class;
-            CELLVALUE = U.objectFieldOffset
-                (ck.getDeclaredField("value"));
+            U.registerStaticFieldOffset(
+                ck.getDeclaredField("CELLVALUE"),
+                ck.getDeclaredField("value"));
             Class<?> ak = Node[].class;
             ABASE = U.arrayBaseOffset(ak);
             int scale = U.arrayIndexScale(ak);

@@ -318,6 +318,7 @@ public class Exchanger<V> {
         Object item;            // This thread's current item
         volatile Object match;  // Item provided by releasing thread
         volatile Thread parked; // Set to this thread when parked, else null
+        private static volatile long MATCH;
     }
 
     /** The corresponding thread local class */
@@ -380,7 +381,7 @@ public class Exchanger<V> {
                     for (int h = p.hash, spins = SPINS;;) {
                         Object v = p.match;
                         if (v != null) {
-                            U.putOrderedObject(p, MATCH, null);
+                            U.putOrderedObject(p, Node.MATCH, null);
                             p.item = null;             // clear for next use
                             p.hash = h;
                             return v;
@@ -511,7 +512,7 @@ public class Exchanger<V> {
                 break;
             }
         }
-        U.putOrderedObject(p, MATCH, null);
+        U.putOrderedObject(p, Node.MATCH, null);
         p.item = null;
         p.hash = h;
         return v;
@@ -629,10 +630,9 @@ public class Exchanger<V> {
 
     // Unsafe mechanics
     private static final sun.misc.Unsafe U;
-    private static final long BOUND;
-    private static final long SLOT;
-    private static final long MATCH;
-    private static final long BLOCKER;
+    private static volatile long BOUND;
+    private static volatile long SLOT;
+    private static volatile long BLOCKER;
     private static final int ABASE;
     static {
         int s;
@@ -642,14 +642,24 @@ public class Exchanger<V> {
             Class<?> nk = Node.class;
             Class<?> ak = Node[].class;
             Class<?> tk = Thread.class;
-            BOUND = U.objectFieldOffset
-                (ek.getDeclaredField("bound"));
-            SLOT = U.objectFieldOffset
-                (ek.getDeclaredField("slot"));
-            MATCH = U.objectFieldOffset
-                (nk.getDeclaredField("match"));
+//            BOUND = U.objectFieldOffset
+//                (ek.getDeclaredField("bound"));
+//            SLOT = U.objectFieldOffset
+//                (ek.getDeclaredField("slot"));
+//            MATCH = U.objectFieldOffset
+//                (nk.getDeclaredField("match"));
             BLOCKER = U.objectFieldOffset
                 (tk.getDeclaredField("parkBlocker"));
+            U.registerStaticFieldOffset(
+                ek.getDeclaredField("BOUND"),
+                ek.getDeclaredField("bound"));
+            U.registerStaticFieldOffset(
+                ek.getDeclaredField("SLOT"),
+                ek.getDeclaredField("slot"));
+            U.registerStaticFieldOffset(
+                nk.getDeclaredField("MATCH"),
+                nk.getDeclaredField("match"));
+
             s = U.arrayIndexScale(ak);
             // ABASE absorbs padding in front of element 0
             ABASE = U.arrayBaseOffset(ak) + (1 << ASHIFT);

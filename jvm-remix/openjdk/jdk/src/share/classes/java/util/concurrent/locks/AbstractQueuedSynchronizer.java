@@ -378,6 +378,9 @@ public abstract class AbstractQueuedSynchronizer
      * on the design of this class.
      */
     static final class Node {
+        static volatile long waitStatusOffset;
+        static volatile long nextOffset;
+
         /** Marker to indicate a node is waiting in shared mode */
         static final Node SHARED = new Node();
         /** Marker to indicate a node is waiting in exclusive mode */
@@ -2258,24 +2261,39 @@ public abstract class AbstractQueuedSynchronizer
      * otherwise be done with atomic field updaters).
      */
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static final long stateOffset;
-    private static final long headOffset;
-    private static final long tailOffset;
-    private static final long waitStatusOffset;
-    private static final long nextOffset;
+    private static volatile long stateOffset;
+    private static volatile long headOffset;
+    private static volatile long tailOffset;
+    //private static final long waitStatusOffset = -1;
+    //private static final long nextOffset;
 
     static {
         try {
-            stateOffset = unsafe.objectFieldOffset
-                (AbstractQueuedSynchronizer.class.getDeclaredField("state"));
-            headOffset = unsafe.objectFieldOffset
-                (AbstractQueuedSynchronizer.class.getDeclaredField("head"));
-            tailOffset = unsafe.objectFieldOffset
-                (AbstractQueuedSynchronizer.class.getDeclaredField("tail"));
-            waitStatusOffset = unsafe.objectFieldOffset
-                (Node.class.getDeclaredField("waitStatus"));
-            nextOffset = unsafe.objectFieldOffset
-                (Node.class.getDeclaredField("next"));
+            stateOffset = -1;
+            headOffset = -1;
+            tailOffset = -1;
+            Node.waitStatusOffset = -1;
+            Node.nextOffset = -1;
+            unsafe.registerStaticFieldOffset(AbstractQueuedSynchronizer.class.getDeclaredField("stateOffset"),
+                (AbstractQueuedSynchronizer.class.getDeclaredField("state")));
+            //stateOffset = unsafe.objectFieldOffset
+            //    (AbstractQueuedSynchronizer.class.getDeclaredField("state"));
+            unsafe.registerStaticFieldOffset(AbstractQueuedSynchronizer.class.getDeclaredField("headOffset"),
+                (AbstractQueuedSynchronizer.class.getDeclaredField("head")));
+            //headOffset = unsafe.objectFieldOffset
+            //    (AbstractQueuedSynchronizer.class.getDeclaredField("head"));
+            unsafe.registerStaticFieldOffset(AbstractQueuedSynchronizer.class.getDeclaredField("tailOffset"),
+                (AbstractQueuedSynchronizer.class.getDeclaredField("tail")));
+            //tailOffset = unsafe.objectFieldOffset
+            //    (AbstractQueuedSynchronizer.class.getDeclaredField("tail"));
+            //waitStatusOffset = unsafe.objectFieldOffset
+            //    (Node.class.getDeclaredField("waitStatus"));
+            //nextOffset = unsafe.objectFieldOffset
+            //    (Node.class.getDeclaredField("next"));
+            unsafe.registerStaticFieldOffset(Node.class.getDeclaredField("waitStatusOffset"),
+                (Node.class.getDeclaredField("waitStatus")));
+            unsafe.registerStaticFieldOffset(Node.class.getDeclaredField("nextOffset"),
+                (Node.class.getDeclaredField("next")));
 
         } catch (Exception ex) { throw new Error(ex); }
     }
@@ -2300,7 +2318,7 @@ public abstract class AbstractQueuedSynchronizer
     private static final boolean compareAndSetWaitStatus(Node node,
                                                          int expect,
                                                          int update) {
-        return unsafe.compareAndSwapInt(node, waitStatusOffset,
+        return unsafe.compareAndSwapInt(node, Node.waitStatusOffset,
                                         expect, update);
     }
 
@@ -2310,6 +2328,6 @@ public abstract class AbstractQueuedSynchronizer
     private static final boolean compareAndSetNext(Node node,
                                                    Node expect,
                                                    Node update) {
-        return unsafe.compareAndSwapObject(node, nextOffset, expect, update);
+        return unsafe.compareAndSwapObject(node, Node.nextOffset, expect, update);
     }
 }

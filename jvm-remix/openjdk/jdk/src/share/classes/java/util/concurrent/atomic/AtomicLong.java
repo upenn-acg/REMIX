@@ -56,7 +56,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
 
     // setup to use Unsafe.compareAndSwapLong for updates
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static final long valueOffset;
+    public static volatile long valueOffset;
 
     /**
      * Records whether the underlying JVM supports lockless
@@ -74,8 +74,10 @@ public class AtomicLong extends Number implements java.io.Serializable {
 
     static {
         try {
-            valueOffset = unsafe.objectFieldOffset
-                (AtomicLong.class.getDeclaredField("value"));
+            valueOffset = 0;
+            unsafe.registerStaticFieldOffset(
+                AtomicLong.class.getDeclaredField("valueOffset"),
+                AtomicLong.class.getDeclaredField("value"));
         } catch (Exception ex) { throw new Error(ex); }
     }
 

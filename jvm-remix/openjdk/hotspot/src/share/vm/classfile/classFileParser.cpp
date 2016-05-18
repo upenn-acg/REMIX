@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #include "precompiled.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classLoader.hpp"
@@ -60,6 +64,10 @@
 #include "services/threadService.hpp"
 #include "utilities/array.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
 
 // We generally try to create the oops directly when parsing, rather than
 // allocating temporary data structures and copying the bytes twice. A
@@ -3137,6 +3145,7 @@ void ClassFileParser::layout_fields(Handle class_loader,
                                     FieldAllocationCount* fac,
                                     ClassAnnotationCollector* parsed_annotations,
                                     FieldLayoutInfo* info,
+                                    bool is_reference_class, // REMIX
                                     TRAPS) {
 
   // Field size and offset computation
@@ -3245,6 +3254,11 @@ void ClassFileParser::layout_fields(Handle class_loader,
 
   bool compact_fields   = CompactFields;
   int  allocation_style = FieldsAllocationStyle;
+  // REMIX START
+  if(REMIXLevel == REMIX_REPAIR_ONLINE)
+        allocation_style = 1;
+  // REMIX END
+
   if( allocation_style < 0 || allocation_style > 2 ) { // Out of range?
     assert(false, "0 <= FieldsAllocationStyle <= 2");
     allocation_style = 1; // Optimistic
@@ -3420,7 +3434,9 @@ void ClassFileParser::layout_fields(Handle class_loader,
           next_nonstatic_oop_offset += heapOopSize;
         }
         // Update oop maps
-        if( nonstatic_oop_map_count > 0 &&
+    
+        if( is_reference_class && // REMIX: Don't merge oop field map so that we can patch it on the fly
+            nonstatic_oop_map_count > 0 &&
             nonstatic_oop_offsets[nonstatic_oop_map_count - 1] ==
             real_offset -
             int(nonstatic_oop_counts[nonstatic_oop_map_count - 1]) *
@@ -3799,6 +3815,12 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   Symbol*  class_name  = cp->unresolved_klass_at(this_class_index);
   assert(class_name != NULL, "class_name can't be null");
 
+  // REMIX START
+  bool is_reference_class = false; 
+  if(strcmp(class_name->as_C_string(), "java/lang/ref/Reference") == 0)
+    is_reference_class = true;
+  // REMIX END
+
   // It's important to set parsed_name *before* resolving the super class.
   // (it's used for cleanup by the caller if parsing fails)
   parsed_name = class_name;
@@ -3947,7 +3969,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     itable_size = access_flags.is_interface() ? 0 : klassItable::compute_itable_size(_transitive_interfaces);
 
     FieldLayoutInfo info;
-    layout_fields(class_loader, &fac, &parsed_annotations, &info, CHECK_NULL);
+    layout_fields(class_loader, &fac, &parsed_annotations, &info, is_reference_class /* REMIX */, CHECK_NULL);
 
     int total_oop_map_size2 =
           InstanceKlass::nonstatic_oop_map_size(info.total_oop_map_count);
@@ -3980,7 +4002,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
     // Fill in information already parsed
     this_klass->set_should_verify_class(verify);
-    jint lh = Klass::instance_layout_helper(info.instance_size, false);
+    //jint lh = Klass::instance_layout_helper(info.instance_size, false); ZZZ
+    jint lh = Klass::instance_layout_helper(info.instance_size, true);
     this_klass->set_layout_helper(lh);
     assert(this_klass->oop_is_instance(), "layout is correct");
     assert(this_klass->size_helper() == info.instance_size, "correct size_helper");
@@ -4031,6 +4054,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       parsed_annotations.apply_to(this_klass);
     apply_parsed_class_attributes(this_klass);
 
+    // zzzzzz
+ 
     // Miranda methods
     if ((num_miranda_methods > 0) ||
         // if this class introduced new miranda methods or
@@ -4218,19 +4243,23 @@ ClassFileParser::compute_oop_map_count(instanceKlassHandle super,
     if (map_count == 0) {
       map_count = nonstatic_oop_map_count;
     } else {
-      // Check whether we should add a new map block or whether the last one can
-      // be extended
-      OopMapBlock* const first_map = super->start_of_nonstatic_oop_maps();
-      OopMapBlock* const last_map = first_map + map_count - 1;
-
-      int next_offset = last_map->offset() + last_map->count() * heapOopSize;
-      if (next_offset == first_nonstatic_oop_offset) {
-        // There is no gap bettwen superklass's last oop field and first
-        // local oop field, merge maps.
-        nonstatic_oop_map_count -= 1;
-      } else {
-        // Superklass didn't end with a oop field, add extra maps
-        assert(next_offset < first_nonstatic_oop_offset, "just checking");
+      // REMIX: Make sure we allocate enough maps to relayout object
+      if(REMIXLevel != REMIX_REPAIR_ONLINE)
+      {
+          // Check whether we should add a new map block or whether the last one can
+          // be extended
+          OopMapBlock* const first_map = super->start_of_nonstatic_oop_maps();
+          OopMapBlock* const last_map = first_map + map_count - 1;
+    
+          int next_offset = last_map->offset() + last_map->count() * heapOopSize;
+          if (next_offset == first_nonstatic_oop_offset) {
+            // There is no gap bettwen superklass's last oop field and first
+            // local oop field, merge maps.
+            nonstatic_oop_map_count -= 1;
+          } else {
+            // Superklass didn't end with a oop field, add extra maps
+            assert(next_offset < first_nonstatic_oop_offset, "just checking");
+          }
       }
       map_count += nonstatic_oop_map_count;
     }

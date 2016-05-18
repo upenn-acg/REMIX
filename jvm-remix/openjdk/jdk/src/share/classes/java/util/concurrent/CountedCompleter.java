@@ -754,12 +754,17 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
 
     // Unsafe mechanics
     private static final sun.misc.Unsafe U;
-    private static final long PENDING;
+    private static volatile long PENDING;
     static {
         try {
             U = sun.misc.Unsafe.getUnsafe();
-            PENDING = U.objectFieldOffset
-                (CountedCompleter.class.getDeclaredField("pending"));
+//            PENDING = U.objectFieldOffset
+//                (CountedCompleter.class.getDeclaredField("pending"));
+            Class k = CountedCompleter.class;
+            U.registerStaticFieldOffset(
+                k.getDeclaredField("PENDING"),
+                k.getDeclaredField("pending"));
+
         } catch (Exception e) {
             throw new Error(e);
         }

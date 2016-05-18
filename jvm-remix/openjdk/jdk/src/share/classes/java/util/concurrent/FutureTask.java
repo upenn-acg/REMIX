@@ -465,19 +465,29 @@ public class FutureTask<V> implements RunnableFuture<V> {
 
     // Unsafe mechanics
     private static final sun.misc.Unsafe UNSAFE;
-    private static final long stateOffset;
-    private static final long runnerOffset;
-    private static final long waitersOffset;
+    private static volatile long stateOffset;
+    private static volatile long runnerOffset;
+    private static volatile long waitersOffset;
     static {
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
             Class<?> k = FutureTask.class;
-            stateOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("state"));
-            runnerOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("runner"));
-            waitersOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("waiters"));
+//            stateOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("state"));
+//            runnerOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("runner"));
+//            waitersOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("waiters"));
+           UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("stateOffset"),
+                k.getDeclaredField("state"));
+           UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("runnerOffset"),
+                k.getDeclaredField("runner"));
+           UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("waitersOffset"),
+                k.getDeclaredField("waiters"));
+
         } catch (Exception e) {
             throw new Error(e);
         }

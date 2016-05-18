@@ -4274,18 +4274,27 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
     }
 
+    protected static volatile long signumOffset;
+    protected static volatile long magOffset;
+
     // Support for resetting final fields while deserializing
     private static class UnsafeHolder {
         private static final sun.misc.Unsafe unsafe;
-        private static final long signumOffset;
-        private static final long magOffset;
         static {
             try {
                 unsafe = sun.misc.Unsafe.getUnsafe();
-                signumOffset = unsafe.objectFieldOffset
-                    (BigInteger.class.getDeclaredField("signum"));
-                magOffset = unsafe.objectFieldOffset
-                    (BigInteger.class.getDeclaredField("mag"));
+                Class k = BigInteger.class;
+              unsafe.registerStaticFieldOffset(
+                    k.getDeclaredField("signumOffset"),
+                    k.getDeclaredField("signum"));
+              unsafe.registerStaticFieldOffset(
+                    k.getDeclaredField("magOffset"),
+                    k.getDeclaredField("mag"));
+
+//                signumOffset = unsafe.objectFieldOffset
+//                    (BigInteger.class.getDeclaredField("signum"));
+//                magOffset = unsafe.objectFieldOffset
+//                    (BigInteger.class.getDeclaredField("mag"));
             } catch (Exception ex) {
                 throw new ExceptionInInitializerError(ex);
             }

@@ -156,6 +156,8 @@ public abstract class AbstractQueuedLongSynchronizer
      * on the design of this class.
      */
     static final class Node {
+        static volatile long waitStatusOffset;
+        static volatile long nextOffset;
         /** Marker to indicate a node is waiting in shared mode */
         static final Node SHARED = new Node();
         /** Marker to indicate a node is waiting in exclusive mode */
@@ -2041,21 +2043,29 @@ public abstract class AbstractQueuedLongSynchronizer
     private static final long stateOffset;
     private static final long headOffset;
     private static final long tailOffset;
-    private static final long waitStatusOffset;
-    private static final long nextOffset;
 
     static {
         try {
-            stateOffset = unsafe.objectFieldOffset
-                (AbstractQueuedLongSynchronizer.class.getDeclaredField("state"));
-            headOffset = unsafe.objectFieldOffset
-                (AbstractQueuedLongSynchronizer.class.getDeclaredField("head"));
-            tailOffset = unsafe.objectFieldOffset
-                (AbstractQueuedLongSynchronizer.class.getDeclaredField("tail"));
-            waitStatusOffset = unsafe.objectFieldOffset
-                (Node.class.getDeclaredField("waitStatus"));
-            nextOffset = unsafe.objectFieldOffset
-                (Node.class.getDeclaredField("next"));
+            stateOffset = 0;
+            headOffset = 0;
+            tailOffset = 0;
+            Node.waitStatusOffset = 0;
+            Node.nextOffset = 0;
+            unsafe.registerStaticFieldOffset(
+                AbstractQueuedLongSynchronizer.class.getDeclaredField("stateOffset"),
+                AbstractQueuedLongSynchronizer.class.getDeclaredField("state"));
+            unsafe.registerStaticFieldOffset(
+                AbstractQueuedLongSynchronizer.class.getDeclaredField("headOffset"),
+                AbstractQueuedLongSynchronizer.class.getDeclaredField("head"));
+            unsafe.registerStaticFieldOffset(
+                AbstractQueuedLongSynchronizer.class.getDeclaredField("tailOffset"),
+                AbstractQueuedLongSynchronizer.class.getDeclaredField("tail"));
+            unsafe.registerStaticFieldOffset(
+                Node.class.getDeclaredField("waitStatusOffset"),
+                Node.class.getDeclaredField("waitStatus"));
+            unsafe.registerStaticFieldOffset(
+                Node.class.getDeclaredField("nextOffset"),
+                Node.class.getDeclaredField("next"));
 
         } catch (Exception ex) { throw new Error(ex); }
     }
@@ -2080,7 +2090,7 @@ public abstract class AbstractQueuedLongSynchronizer
     private static final boolean compareAndSetWaitStatus(Node node,
                                                          int expect,
                                                          int update) {
-        return unsafe.compareAndSwapInt(node, waitStatusOffset,
+        return unsafe.compareAndSwapInt(node, Node.waitStatusOffset,
                                         expect, update);
     }
 
@@ -2090,6 +2100,6 @@ public abstract class AbstractQueuedLongSynchronizer
     private static final boolean compareAndSetNext(Node node,
                                                    Node expect,
                                                    Node update) {
-        return unsafe.compareAndSwapObject(node, nextOffset, expect, update);
+        return unsafe.compareAndSwapObject(node, Node.nextOffset, expect, update);
     }
 }

@@ -39,6 +39,8 @@
 #include "services/threadService.hpp"
 #include "trace/tracing.hpp"
 
+#include "remix/FalseSharingFinder.hpp" // REMIX
+
 #define VM_OP_NAME_INITIALIZE(name) #name,
 
 const char* VM_Operation::_names[VM_Operation::VMOp_Terminating] = \
@@ -442,6 +444,8 @@ void VM_Exit::doit() {
   // Among 16276 JCK tests, 94% of them come here without any threads still
   // running in native; the other 6% are quiescent within 250ms (Ultra 80).
   wait_for_threads_in_native_to_block();
+
+  FalseSharingFinder::done_vm(); // REMIX
 
   set_vm_exited();
 

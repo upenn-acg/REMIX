@@ -2992,19 +2992,29 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 
     // Unsafe mechanics
     private static final sun.misc.Unsafe UNSAFE;
-    private static final long RESULT;
-    private static final long WAITERS;
-    private static final long COMPLETIONS;
+    private static volatile long RESULT;
+    private static volatile long WAITERS;
+    private static volatile long COMPLETIONS;
     static {
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
             Class<?> k = CompletableFuture.class;
-            RESULT = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("result"));
-            WAITERS = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("waiters"));
-            COMPLETIONS = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("completions"));
+            RESULT = WAITERS = COMPLETIONS = -1;
+            UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("RESULT"),
+                k.getDeclaredField("result"));
+            UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("WAITERS"),
+                k.getDeclaredField("waiters"));
+            UNSAFE.registerStaticFieldOffset(
+                k.getDeclaredField("COMPLETIONS"),
+                k.getDeclaredField("completions"));
+//            RESULT = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("result"));
+//            WAITERS = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("waiters"));
+//            COMPLETIONS = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("completions"));
         } catch (Exception e) {
             throw new Error(e);
         }

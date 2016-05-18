@@ -634,7 +634,7 @@ void ObjArrayKlass::oop_print_on(oop obj, outputStream* st) {
   objArrayOop oa = objArrayOop(obj);
   int print_len = MIN2((intx) oa->length(), MaxElementPrintSize);
   for(int index = 0; index < print_len; index++) {
-    st->print(" - %3d : ", index);
+    st->print(" - %3d (%p): ", index, oa->obj_at(index));
     oa->obj_at(index)->print_value_on(st);
     st->cr();
   }

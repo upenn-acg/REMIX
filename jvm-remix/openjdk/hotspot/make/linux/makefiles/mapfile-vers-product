@@ -22,6 +22,11 @@
 #  
 #
 
+
+# Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+# ACG group, University of Pennsylvania.
+
+
 # Define public interface.
 
 SUNWprivate_1.1 {
@@ -259,6 +264,13 @@ SUNWprivate_1.1 {
 
                 # This is for Forte Analyzer profiling support.
                 AsyncGetCallTrace;
+
+                # REMIX start
+                JVM_remix_repair_false_sharing;
+                JVM_remix_test_heap_scan_speed;
+                JVM_remix_print_object;
+                JVM_remix_object_size;
+                # REMIX end
 
 		# INSERT VTABLE SYMBOLS HERE
 

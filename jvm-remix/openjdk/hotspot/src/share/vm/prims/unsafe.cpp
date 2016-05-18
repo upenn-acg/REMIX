@@ -40,6 +40,9 @@
 #include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 
+// REMIX
+#include "remix/FalseSharingFinder.hpp"
+
 /*
  *      Implementation of class sun.misc.Unsafe
  */
@@ -722,8 +725,67 @@ jint find_field_offset(jobject field, int must_be_static, TRAPS) {
   return field_offset_from_byte_offset(offset);
 }
 
+// REMIX START
+jint remix_register_field_offset_static_field(jobject tgt_field, jobject src_field, TRAPS) {
+  if (tgt_field == NULL || src_field == NULL) {
+    THROW_0(vmSymbols::java_lang_NullPointerException());
+  }
+
+  oop tgt_reflected   = JNIHandles::resolve_non_null(tgt_field);
+  oop tgt_mirror      = java_lang_reflect_Field::clazz(tgt_reflected);
+  Klass* tgt_k      = java_lang_Class::as_Klass(tgt_mirror);
+  int tgt_slot        = java_lang_reflect_Field::slot(tgt_reflected);
+  int tgt_modifiers   = java_lang_reflect_Field::modifiers(tgt_reflected);
+
+  oop src_reflected   = JNIHandles::resolve_non_null(src_field);
+  oop src_mirror      = java_lang_reflect_Field::clazz(src_reflected);
+  Klass* src_k      = java_lang_Class::as_Klass(src_mirror);
+  int src_slot        = java_lang_reflect_Field::slot(src_reflected);
+  int src_modifiers   = java_lang_reflect_Field::modifiers(src_reflected);
+
+  if(src_mirror != tgt_mirror || tgt_k->java_mirror() != tgt_mirror)
+    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+
+  if((src_modifiers & JVM_ACC_STATIC) != 0)
+    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+  if((tgt_modifiers & JVM_ACC_STATIC) == 0)
+    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+
+  if(!FalseSharingFinder::register_unsafe_field_offset(InstanceKlass::cast(tgt_k), tgt_slot, src_slot))
+    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+
+  return 0;
+}
+jint remix_register_field_offset_taken(jobject src_field, TRAPS) {
+  if (src_field == NULL) {
+    THROW_0(vmSymbols::java_lang_NullPointerException());
+  }
+
+  oop src_reflected   = JNIHandles::resolve_non_null(src_field);
+  oop src_mirror      = java_lang_reflect_Field::clazz(src_reflected);
+  Klass* src_k      = java_lang_Class::as_Klass(src_mirror);
+  int src_slot        = java_lang_reflect_Field::slot(src_reflected);
+  int src_modifiers   = java_lang_reflect_Field::modifiers(src_reflected);
+
+  if((src_modifiers & JVM_ACC_STATIC) != 0)
+    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+
+  if(!FalseSharingFinder::register_unsafe_field_offset_taken(InstanceKlass::cast(src_k), src_slot))
+    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+
+  return 0;
+}
+
+UNSAFE_ENTRY(jlong, Unsafe_RegisterStaticFieldOffset(JNIEnv *env, jobject unsafe, jobject tgt_field, jobject src_field))
+  UnsafeWrapper("Unsafe_RegisterStaticFieldOffset");
+  return remix_register_field_offset_static_field(tgt_field, src_field, THREAD);
+UNSAFE_END
+
+// REMIX END
+
 UNSAFE_ENTRY(jlong, Unsafe_ObjectFieldOffset(JNIEnv *env, jobject unsafe, jobject field))
   UnsafeWrapper("Unsafe_ObjectFieldOffset");
+  remix_register_field_offset_taken(field, THREAD);
   return find_field_offset(field, 0, THREAD);
 UNSAFE_END
 
@@ -1590,6 +1652,7 @@ static JNINativeMethod methods_18[] = {
     {CC"freeMemory",         CC"("ADR")V",               FN_PTR(Unsafe_FreeMemory)},
 
     {CC"objectFieldOffset",  CC"("FLD")J",               FN_PTR(Unsafe_ObjectFieldOffset)},
+    {CC"registerStaticFieldOffset",  CC"("FLD""FLD")J",  FN_PTR(Unsafe_RegisterStaticFieldOffset)},
     {CC"staticFieldOffset",  CC"("FLD")J",               FN_PTR(Unsafe_StaticFieldOffset)},
     {CC"staticFieldBase",    CC"("FLD")"OBJ,             FN_PTR(Unsafe_StaticFieldBaseFromField)},
     {CC"ensureClassInitialized",CC"("CLS")V",            FN_PTR(Unsafe_EnsureClassInitialized)},

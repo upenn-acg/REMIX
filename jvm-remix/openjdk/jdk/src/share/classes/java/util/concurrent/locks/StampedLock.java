@@ -317,6 +317,10 @@ public class StampedLock implements java.io.Serializable {
         volatile int status;      // 0, WAITING, or CANCELLED
         final int mode;           // RMODE or WMODE
         WNode(int m, WNode p) { mode = m; prev = p; }
+    
+        static volatile long WNEXT;
+        static volatile long WSTATUS;
+        static volatile long WCOWAIT;
     }
 
     /** Head of CLH queue */
@@ -1013,7 +1017,7 @@ public class StampedLock implements java.io.Serializable {
     private void release(WNode h) {
         if (h != null) {
             WNode q; Thread w;
-            U.compareAndSwapInt(h, WSTATUS, WAITING, 0);
+            U.compareAndSwapInt(h, WNode.WSTATUS, WAITING, 0);
             if ((q = h.next) == null || q.status == CANCELLED) {
                 for (WNode t = wtail; t != null && t != h; t = t.prev)
                     if (t.status <= 0)
@@ -1087,7 +1091,7 @@ public class StampedLock implements java.io.Serializable {
             else if (h != null) { // help release stale waiters
                 WNode c; Thread w;
                 while ((c = h.cowait) != null) {
-                    if (U.compareAndSwapObject(h, WCOWAIT, c, c.cowait) &&
+                    if (U.compareAndSwapObject(h, WNode.WCOWAIT, c, c.cowait) &&
                         (w = c.thread) != null)
                         U.unpark(w);
                 }
@@ -1098,7 +1102,7 @@ public class StampedLock implements java.io.Serializable {
                         (p = np).next = node;   // stale
                 }
                 else if ((ps = p.status) == 0)
-                    U.compareAndSwapInt(p, WSTATUS, 0, WAITING);
+                    U.compareAndSwapInt(p, WNode.WSTATUS, 0, WAITING);
                 else if (ps == CANCELLED) {
                     if ((pp = p.prev) != null) {
                         node.prev = pp;
@@ -1176,14 +1180,14 @@ public class StampedLock implements java.io.Serializable {
                     break;
                 }
             }
-            else if (!U.compareAndSwapObject(p, WCOWAIT,
+            else if (!U.compareAndSwapObject(p, WNode.WCOWAIT,
                                              node.cowait = p.cowait, node))
                 node.cowait = null;
             else {
                 for (;;) {
                     WNode pp, c; Thread w;
                     if ((h = whead) != null && (c = h.cowait) != null &&
-                        U.compareAndSwapObject(h, WCOWAIT, c, c.cowait) &&
+                        U.compareAndSwapObject(h, WNode.WCOWAIT, c, c.cowait) &&
                         (w = c.thread) != null) // help release
                         U.unpark(w);
                     if (h == (pp = p.prev) || h == p || pp == null) {
@@ -1238,7 +1242,7 @@ public class StampedLock implements java.io.Serializable {
                         whead = node;
                         node.prev = null;
                         while ((c = node.cowait) != null) {
-                            if (U.compareAndSwapObject(node, WCOWAIT,
+                            if (U.compareAndSwapObject(node, WNode.WCOWAIT,
                                                        c, c.cowait) &&
                                 (w = c.thread) != null)
                                 U.unpark(w);
@@ -1253,7 +1257,7 @@ public class StampedLock implements java.io.Serializable {
             else if (h != null) {
                 WNode c; Thread w;
                 while ((c = h.cowait) != null) {
-                    if (U.compareAndSwapObject(h, WCOWAIT, c, c.cowait) &&
+                    if (U.compareAndSwapObject(h, WNode.WCOWAIT, c, c.cowait) &&
                         (w = c.thread) != null)
                         U.unpark(w);
                 }
@@ -1264,7 +1268,7 @@ public class StampedLock implements java.io.Serializable {
                         (p = np).next = node;   // stale
                 }
                 else if ((ps = p.status) == 0)
-                    U.compareAndSwapInt(p, WSTATUS, 0, WAITING);
+                    U.compareAndSwapInt(p, WNode.WSTATUS, 0, WAITING);
                 else if (ps == CANCELLED) {
                     if ((pp = p.prev) != null) {
                         node.prev = pp;
@@ -1316,7 +1320,7 @@ public class StampedLock implements java.io.Serializable {
             // unsplice cancelled nodes from group
             for (WNode p = group, q; (q = p.cowait) != null;) {
                 if (q.status == CANCELLED) {
-                    U.compareAndSwapObject(p, WCOWAIT, q, q.cowait);
+                    U.compareAndSwapObject(p, WNode.WCOWAIT, q, q.cowait);
                     p = group; // restart
                 }
                 else
@@ -1336,7 +1340,7 @@ public class StampedLock implements java.io.Serializable {
                             if (t.status != CANCELLED)
                                 q = t;     // don't link if succ cancelled
                         if (succ == q ||   // ensure accurate successor
-                            U.compareAndSwapObject(node, WNEXT,
+                            U.compareAndSwapObject(node, WNode.WNEXT,
                                                    succ, succ = q)) {
                             if (succ == null && node == wtail)
                                 U.compareAndSwapObject(this, WTAIL, node, pred);
@@ -1344,7 +1348,7 @@ public class StampedLock implements java.io.Serializable {
                         }
                     }
                     if (pred.next == node) // unsplice pred link
-                        U.compareAndSwapObject(pred, WNEXT, node, succ);
+                        U.compareAndSwapObject(pred, WNode.WNEXT, node, succ);
                     if (succ != null && (w = succ.thread) != null) {
                         succ.thread = null;
                         U.unpark(w);       // wake up succ to observe new pred
@@ -1352,7 +1356,7 @@ public class StampedLock implements java.io.Serializable {
                     if (pred.status != CANCELLED || (pp = pred.prev) == null)
                         break;
                     node.prev = pp;        // repeat if new pred wrong/cancelled
-                    U.compareAndSwapObject(pp, WNEXT, pred, succ);
+                    U.compareAndSwapObject(pp, WNode.WNEXT, pred, succ);
                     pred = pp;
                 }
             }
@@ -1378,12 +1382,9 @@ public class StampedLock implements java.io.Serializable {
 
     // Unsafe mechanics
     private static final sun.misc.Unsafe U;
-    private static final long STATE;
-    private static final long WHEAD;
-    private static final long WTAIL;
-    private static final long WNEXT;
-    private static final long WSTATUS;
-    private static final long WCOWAIT;
+    private static volatile long STATE;
+    private static volatile long WHEAD;
+    private static volatile long WTAIL;
     private static final long PARKBLOCKER;
 
     static {
@@ -1391,18 +1392,37 @@ public class StampedLock implements java.io.Serializable {
             U = sun.misc.Unsafe.getUnsafe();
             Class<?> k = StampedLock.class;
             Class<?> wk = WNode.class;
-            STATE = U.objectFieldOffset
-                (k.getDeclaredField("state"));
-            WHEAD = U.objectFieldOffset
-                (k.getDeclaredField("whead"));
-            WTAIL = U.objectFieldOffset
-                (k.getDeclaredField("wtail"));
-            WSTATUS = U.objectFieldOffset
-                (wk.getDeclaredField("status"));
-            WNEXT = U.objectFieldOffset
-                (wk.getDeclaredField("next"));
-            WCOWAIT = U.objectFieldOffset
-                (wk.getDeclaredField("cowait"));
+//            STATE = U.objectFieldOffset
+//                (k.getDeclaredField("state"));
+//            WHEAD = U.objectFieldOffset
+//                (k.getDeclaredField("whead"));
+//            WTAIL = U.objectFieldOffset
+//                (k.getDeclaredField("wtail"));
+//            WSTATUS = U.objectFieldOffset
+//                (wk.getDeclaredField("status"));
+//            WNEXT = U.objectFieldOffset
+//                (wk.getDeclaredField("next"));
+//            WCOWAIT = U.objectFieldOffset
+//                (wk.getDeclaredField("cowait"));
+           U.registerStaticFieldOffset(
+                k.getDeclaredField("STATE"),
+                k.getDeclaredField("state"));
+           U.registerStaticFieldOffset(
+                k.getDeclaredField("WHEAD"),
+                k.getDeclaredField("whead"));
+           U.registerStaticFieldOffset(
+                k.getDeclaredField("WTAIL"),
+                k.getDeclaredField("wtail"));
+           U.registerStaticFieldOffset(
+                wk.getDeclaredField("WSTATUS"),
+                wk.getDeclaredField("status"));
+           U.registerStaticFieldOffset(
+                wk.getDeclaredField("WNEXT"),
+                wk.getDeclaredField("next"));
+           U.registerStaticFieldOffset(
+                wk.getDeclaredField("WCOWAIT"),
+                wk.getDeclaredField("cowait"));
+
             Class<?> tk = Thread.class;
             PARKBLOCKER = U.objectFieldOffset
                 (tk.getDeclaredField("parkBlocker"));

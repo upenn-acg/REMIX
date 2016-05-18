@@ -23,6 +23,10 @@
  * questions.
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 /*
  *      Link foreign methods.  This first half of this file contains the
  *      machine independent dynamic linking routines.
@@ -40,6 +44,29 @@
 #include "jvm.h"
 
 #include "java_lang_Runtime.h"
+
+// REMIX start
+JNIEXPORT void JNICALL
+Java_java_lang_Runtime_remixRepairFalseSharing(JNIEnv *env, jobject this)
+{
+    JVM_remix_repair_false_sharing();
+}
+JNIEXPORT void JNICALL
+Java_java_lang_Runtime_remixTestHeapScanSpeed(JNIEnv *env, jobject this, jint count)
+{
+    JVM_remix_test_heap_scan_speed(count);
+}
+JNIEXPORT void JNICALL
+Java_java_lang_Runtime_remixPrintObject(JNIEnv *env, jobject this, jobject obj)
+{
+    JVM_remix_print_object(obj);
+}
+JNIEXPORT jint JNICALL
+Java_java_lang_Runtime_remixObjectSize(JNIEnv *env, jobject this, jobject obj)
+{
+    return JVM_remix_object_size(obj);
+}
+// REMIX end
 
 JNIEXPORT jlong JNICALL
 Java_java_lang_Runtime_freeMemory(JNIEnv *env, jobject this)

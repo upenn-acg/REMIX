@@ -50,12 +50,14 @@ public class AtomicReference<V> implements java.io.Serializable {
     private static final long serialVersionUID = -1848883965231344442L;
 
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static final long valueOffset;
+    public static volatile long valueOffset;
 
     static {
         try {
-            valueOffset = unsafe.objectFieldOffset
-                (AtomicReference.class.getDeclaredField("value"));
+            valueOffset = 0;
+            unsafe.registerStaticFieldOffset(
+                AtomicReference.class.getDeclaredField("valueOffset"),
+                AtomicReference.class.getDeclaredField("value"));
         } catch (Exception ex) { throw new Error(ex); }
     }
 

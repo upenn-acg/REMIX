@@ -22,6 +22,10 @@
  *
  */
 
+/* Code Modified for REMIX by Ariel Eizenberg, arieleiz@seas.upenn.edu.
+ * ACG group, University of Pennsylvania.
+ */
+
 #include "precompiled.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/markOop.hpp"
@@ -31,6 +35,9 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
+
+// REMIX
+#include "remix/FalseSharingFinder.hpp"
 
 static bool _biased_locking_enabled = false;
 BiasedLockingCounters BiasedLocking::_counters;
@@ -437,29 +444,60 @@ static void clean_up_cached_monitor_info() {
 }
 
 
+/* *** REMIX ***
+ * Instead of scheduling REMIX VM operations ourselves,
+ * we piggy back on a frequent operation, bias revocing.
+ *
+ * This is not clean engineering, but its a quick shortcut 
+ * for an academic project.
+ */
+
 class VM_RevokeBias : public VM_Operation {
 protected:
   Handle* _obj;
   GrowableArray<Handle>* _objs;
   JavaThread* _requesting_thread;
   BiasedLocking::Condition _status_code;
+  // REMIX START
+  bool _just_repair_fs; 
+  bool _do_repair_fs; 
+  // REMIX END
 
 public:
   VM_RevokeBias(Handle* obj, JavaThread* requesting_thread)
     : _obj(obj)
     , _objs(NULL)
     , _requesting_thread(requesting_thread)
-    , _status_code(BiasedLocking::NOT_BIASED) {}
+    , _status_code(BiasedLocking::NOT_BIASED)
+  // REMIX START
+    , _just_repair_fs(false) 
+    , _do_repair_fs(false)
+  // REMIX END 
+  {} 
 
   VM_RevokeBias(GrowableArray<Handle>* objs, JavaThread* requesting_thread)
     : _obj(NULL)
     , _objs(objs)
     , _requesting_thread(requesting_thread)
-    , _status_code(BiasedLocking::NOT_BIASED) {}
+    , _status_code(BiasedLocking::NOT_BIASED) 
+  // REMIX START
+    , _just_repair_fs(false) 
+    , _do_repair_fs(false)
+  // REMIX END 
+  {} 
 
   virtual VMOp_Type type() const { return VMOp_RevokeBias; }
 
-  virtual bool doit_prologue() {
+  virtual bool doit_prologue() { 
+    // REMIX START
+    _just_repair_fs = false; 
+    _do_repair_fs = FalseSharingFinder::should_repair_fs();
+    if(_do_repair_fs)
+    {
+        Heap_lock->lock();
+    }
+    // REMIX END
+
     // Verify that there is actual work to do since the callers just
     // give us locked object(s). If we don't find any biased objects
     // there is nothing to do and we avoid a safepoint.
@@ -476,10 +514,19 @@ public:
         }
       }
     }
-    return false;
+
+    // REMIX START
+    _just_repair_fs = _do_repair_fs;
+    return _just_repair_fs;
+    // REMIX END
   }
 
   virtual void doit() {
+    // REMIX START
+    if(_just_repair_fs)
+        return;
+    // REMIX END
+
     if (_obj != NULL) {
       if (TraceBiasedLocking) {
         tty->print_cr("Revoking bias with potentially per-thread safepoint:");
@@ -494,6 +541,13 @@ public:
       BiasedLocking::revoke_at_safepoint(_objs);
     }
   }
+
+  // REMIX START
+  virtual void doit_epilogue() {
+    if(_do_repair_fs)
+        Heap_lock->unlock();
+  }
+  // REMIX END
 
   BiasedLocking::Condition status_code() const {
     return _status_code;

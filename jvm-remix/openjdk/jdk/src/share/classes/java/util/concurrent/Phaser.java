@@ -1147,13 +1147,14 @@ public class Phaser {
     // Unsafe mechanics
 
     private static final sun.misc.Unsafe UNSAFE;
-    private static final long stateOffset;
+    private static volatile long stateOffset;
     static {
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
             Class<?> k = Phaser.class;
-            stateOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("state"));
+            UNSAFE.registerStaticFieldOffset(k.getDeclaredField("stateOffset"), k.getDeclaredField("state"));
+//            stateOffset = UNSAFE.objectFieldOffset
+//                (k.getDeclaredField("state"));
         } catch (Exception e) {
             throw new Error(e);
         }
