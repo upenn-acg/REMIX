@@ -146,8 +146,7 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
 void ReferenceProcessor::verify_no_references_recorded() {
   guarantee(!_discovering_refs, "Discovering refs?");
   for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
-// REMIX START
-//   XXX XXX XXX !!!!
+// REMIX START - XXX commented out due to very rare bug being investigated
 //    guarantee(_discovered_refs[i].is_empty(),
 //              "Found non-empty discovered list");
 // REMIX END
