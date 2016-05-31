@@ -1,5 +1,6 @@
 # REMIX: Online Detection and Repair of Cache Contention for the JVM
-## Ariel Eizenberg, Shiliang Hu, Gilles Pokam , Joseph Devietti
+## Ariel Eizenberg (1), Shiliang Hu (2), Gilles Pokam (3), Joseph Devietti (4)
+### (1), (4) - University of Pennsylvania, (2), (3) - Intel 
 ### Published in PLDI 2016
 
 As ever more computation shifts onto multicore architectures,
@@ -30,4 +31,5 @@ no statistically-significant performance overhead on other
 benchmarks that do not exhibit cache contention, making
 REMIX practical for always-on use.
 
+A tutorial and usage instructions are available at (http://acg.cis.upenn.edu/wiki/index.php?n=Projects.REMIX).
 
